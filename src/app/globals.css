@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap');
 
 :root {
   --background: #faf6f0;
@@ -55,6 +54,12 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: 'Noto Serif SC', 'Georgia', serif;
+}
+
+.font-numeric {
+  font-family: var(--font-numeric), 'SF Pro Display', 'Segoe UI', sans-serif;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
 }
 
 /* Paper texture overlay */

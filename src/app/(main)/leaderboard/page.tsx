@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useTimer } from '@/components/TimerContext'
+import { useTimer, useLiveElapsed } from '@/components/TimerContext'
 import { Sprig, Flower } from '@/components/Botanicals'
 
 interface LeaderboardEntry {
@@ -37,7 +37,8 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true)
   const initRef = useRef(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const { state: timerState, elapsed, taskName } = useTimer()
+  const { state: timerState, taskName } = useTimer()
+  const elapsed = useLiveElapsed()
 
   const fetchData = useCallback(async () => {
     const supabase = createClient()
@@ -56,6 +57,7 @@ export default function LeaderboardPage() {
 
     const supabase = createClient()
     async function init() {
+      const leaderboardPromise = fetchData()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         setMyId(user.id)
@@ -66,7 +68,7 @@ export default function LeaderboardPage() {
           .single()
         if (profile) setMyGoal(profile.goal)
       }
-      fetchData()
+      await leaderboardPromise
     }
     init()
 
@@ -212,7 +214,7 @@ export default function LeaderboardPage() {
                           style={{ width: `${progress}%` }}
                         />
                       </div>
-                      <span className="text-xs text-ink-light/50 shrink-0 tabular-nums w-8 text-right">
+                      <span className="text-xs text-ink-light/50 shrink-0 font-numeric w-8 text-right">
                         {Math.round(progress)}%
                       </span>
                     </div>
@@ -220,7 +222,7 @@ export default function LeaderboardPage() {
 
                   {/* Time */}
                   <div className="text-right shrink-0 pl-1">
-                    <div className={`text-sm font-bold font-mono tabular-nums ${isMeActive ? 'text-sage-dark' : 'text-ink'}`}>
+                    <div className={`text-sm font-bold font-numeric ${isMeActive ? 'text-sage-dark' : 'text-ink'}`}>
                       {formatHMS(entry.today_seconds)}
                     </div>
                     <div className="text-xs text-ink-light/50">

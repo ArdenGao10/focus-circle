@@ -51,47 +51,53 @@ export default function ProfilePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      let profileData: Profile | null = null
-      const { data: p1, error: pErr } = await supabase
-        .from('profiles')
-        .select('nickname, goal, email, target_minutes')
-        .eq('id', user.id)
-        .single()
+      const profilePromise = (async (): Promise<Profile | null> => {
+        const { data: p1, error: pErr } = await supabase
+          .from('profiles')
+          .select('nickname, goal, email, target_minutes')
+          .eq('id', user.id)
+          .single()
 
-      if (pErr) {
+        if (!pErr && p1) return p1
+
         const { data: p2 } = await supabase
           .from('profiles')
           .select('nickname, goal, email')
           .eq('id', user.id)
           .single()
-        if (p2) profileData = { ...p2, target_minutes: 120 }
-      } else if (p1) {
-        profileData = p1
-      }
 
-      if (profileData) setProfile(profileData)
+        return p2 ? { ...p2, target_minutes: 120 } : null
+      })()
 
-      const { data: sessionData } = await supabase
+      const sessionsPromise = supabase
         .from('sessions')
         .select('id, duration_seconds, date')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(50)
 
-      if (sessionData) {
-        setSessions(sessionData)
-        setTotalSeconds(sessionData.reduce((sum: number, s: { duration_seconds: number }) => sum + s.duration_seconds, 0))
-        setTotalDays(new Set(sessionData.map((s: { date: string }) => s.date)).size)
-      }
-
-      const { data: taskData } = await supabase
+      const tasksPromise = supabase
         .from('daily_tasks')
         .select('id, title, completed, date')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(100)
 
-      if (taskData) setTasks(taskData)
+      const [profileData, sessionsRes, tasksRes] = await Promise.all([
+        profilePromise,
+        sessionsPromise,
+        tasksPromise,
+      ])
+
+      if (profileData) setProfile(profileData)
+
+      if (sessionsRes.data) {
+        setSessions(sessionsRes.data)
+        setTotalSeconds(sessionsRes.data.reduce((sum: number, s: { duration_seconds: number }) => sum + s.duration_seconds, 0))
+        setTotalDays(new Set(sessionsRes.data.map((s: { date: string }) => s.date)).size)
+      }
+
+      if (tasksRes.data) setTasks(tasksRes.data)
     }
     load()
   }, [])

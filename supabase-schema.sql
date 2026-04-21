@@ -27,10 +27,14 @@ create policy "Users can insert own profile"
 create table public.sessions (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
+  task_name text not null default '个人专注',
   duration_seconds integer not null default 0,
   date date not null default current_date,
   created_at timestamptz not null default now()
 );
+
+-- 兼容已存在的库：补充 task_name 字段
+alter table public.sessions add column if not exists task_name text not null default '个人专注';
 
 alter table public.sessions enable row level security;
 

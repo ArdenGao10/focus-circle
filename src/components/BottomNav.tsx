@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTimer } from './TimerContext'
 
 const tabs = [
@@ -12,8 +14,17 @@ const tabs = [
 
 export default function BottomNav() {
   const pathname = usePathname()
+  const router = useRouter()
   const { state } = useTimer()
   const isTimerRunning = state === 'running' || state === 'paused'
+
+  useEffect(() => {
+    tabs.forEach((tab) => {
+      if (tab.href !== pathname) {
+        router.prefetch(tab.href)
+      }
+    })
+  }, [pathname, router])
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-paper/90 backdrop-blur-md border-t border-cream pb-[env(safe-area-inset-bottom)]">

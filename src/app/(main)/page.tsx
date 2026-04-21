@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useTimer, type SessionRecord } from '@/components/TimerContext'
+import { useTimer, useLiveElapsed, type SessionRecord } from '@/components/TimerContext'
 import DailyTasks from '@/components/DailyTasks'
 import { createClient } from '@/lib/supabase/client'
 import { Leaf, Flower, Branch } from '@/components/Botanicals'
+
+const PERSONAL_FOCUS = '个人专注'
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -26,11 +28,17 @@ interface LocalSession {
   id: string
   duration_seconds: number
   created_at: string
-  taskName: string | null
+  taskName: string
+}
+
+function normalizeTaskName(taskName: string | null | undefined): string {
+  const normalized = taskName?.trim()
+  return normalized ? normalized : PERSONAL_FOCUS
 }
 
 export default function TimerPage() {
-  const { elapsed, state, saving, taskName, start, pause, resume, end, lastSession } = useTimer()
+  const { state, saving, taskName, start, pause, resume, end, lastSession } = useTimer()
+  const elapsed = useLiveElapsed()
   const [todaySessions, setTodaySessions] = useState<LocalSession[]>([])
   const fetchedRef = useRef(false)
   const router = useRouter()
@@ -45,25 +53,76 @@ export default function TimerPage() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data } = await supabase
+      const withTaskName = await supabase
+        .from('sessions')
+        .select('id, duration_seconds, created_at, task_name')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .order('created_at', { ascending: false })
+
+      if (withTaskName.data) {
+        setTodaySessions(
+          withTaskName.data.map((s: { id: string; duration_seconds: number; created_at: string; task_name: string | null }) => ({
+            id: s.id,
+            duration_seconds: s.duration_seconds,
+            created_at: s.created_at,
+            taskName: normalizeTaskName(s.task_name),
+          }))
+        )
+        return
+      }
+
+      const fallback = await supabase
         .from('sessions')
         .select('id, duration_seconds, created_at')
         .eq('user_id', user.id)
         .eq('date', today)
         .order('created_at', { ascending: false })
-      if (data) setTodaySessions(data.map((s: { id: string; duration_seconds: number; created_at: string }) => ({ ...s, taskName: null })))
+
+      if (fallback.data) {
+        setTodaySessions(
+          fallback.data.map((s: { id: string; duration_seconds: number; created_at: string }) => ({
+            ...s,
+            taskName: PERSONAL_FOCUS,
+          }))
+        )
+      }
     }
     load()
   }, [])
 
   useEffect(() => {
     if (lastSession) {
-      setTodaySessions(prev => [{
-        id: crypto.randomUUID(),
-        duration_seconds: lastSession.duration_seconds,
-        created_at: lastSession.created_at,
-        taskName: lastSession.taskName,
-      }, ...prev])
+      const normalizedTaskName = normalizeTaskName(lastSession.taskName)
+      setTodaySessions(prev => {
+        if (normalizedTaskName !== PERSONAL_FOCUS) {
+          return [{
+            id: crypto.randomUUID(),
+            duration_seconds: lastSession.duration_seconds,
+            created_at: lastSession.created_at,
+            taskName: normalizedTaskName,
+          }, ...prev]
+        }
+
+        const existingIndex = prev.findIndex((s) => s.taskName === PERSONAL_FOCUS)
+        if (existingIndex === -1) {
+          return [{
+            id: crypto.randomUUID(),
+            duration_seconds: lastSession.duration_seconds,
+            created_at: lastSession.created_at,
+            taskName: PERSONAL_FOCUS,
+          }, ...prev]
+        }
+
+        return prev.map((s, index) => {
+          if (index !== existingIndex) return s
+          return {
+            ...s,
+            duration_seconds: s.duration_seconds + lastSession.duration_seconds,
+            created_at: lastSession.created_at,
+          }
+        })
+      })
     }
   }, [lastSession])
 
@@ -72,7 +131,27 @@ export default function TimerPage() {
     router.push('/leaderboard')
   }
 
-  const todayTotal = todaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
+  const displaySessions = useMemo(() => {
+    const personal = todaySessions.filter((s) => s.taskName === PERSONAL_FOCUS)
+    const others = todaySessions.filter((s) => s.taskName !== PERSONAL_FOCUS)
+
+    if (personal.length === 0) return todaySessions
+
+    const mergedPersonal = personal.reduce((acc, current) => {
+      if (!acc) return { ...current }
+      return {
+        ...acc,
+        duration_seconds: acc.duration_seconds + current.duration_seconds,
+        created_at: current.created_at > acc.created_at ? current.created_at : acc.created_at,
+      }
+    }, null as LocalSession | null)
+
+    if (!mergedPersonal) return others
+
+    return [mergedPersonal, ...others]
+  }, [todaySessions])
+
+  const todayTotal = displaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
@@ -104,9 +183,9 @@ export default function TimerPage() {
           </p>
 
           {/* Timer display */}
-          <div className={`text-5xl font-bold tracking-widest mb-8 tabular-nums transition-colors ${
+          <div className={`text-5xl font-bold tracking-widest mb-8 font-numeric transition-colors ${
             state === 'running' ? 'text-ink' : state === 'paused' ? 'text-terracotta' : 'text-ink-light/40'
-          }`} style={{ fontFamily: "'Noto Serif SC', Georgia, serif", letterSpacing: '0.15em' }}>
+          }`} style={{ letterSpacing: '0.15em' }}>
             {formatTime(elapsed)}
           </div>
 
@@ -167,7 +246,7 @@ export default function TimerPage() {
       </div>
 
       {/* Today's session records */}
-      {todaySessions.length > 0 && (
+      {displaySessions.length > 0 && (
         <div className="relative bg-paper rounded-2xl border border-cream p-4 shadow-sm paper-texture">
           <div className="absolute top-0 right-8 w-16 h-3 bg-lavender-light opacity-50 -translate-y-1 rounded-b-sm rotate-1" />
 
@@ -176,18 +255,16 @@ export default function TimerPage() {
               今日记录
             </span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-sage-light/40 text-sage-dark">
-              共 {formatDuration(todayTotal)}
+              共 {formatTime(todayTotal)}
             </span>
           </div>
           <div className="space-y-2">
-            {todaySessions.map((s) => {
-              const time = new Date(s.created_at)
-              const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`
+            {displaySessions.map((s) => {
               return (
                 <div key={s.id} className="flex items-center gap-3 py-1.5">
                   <div className="w-2 h-2 rounded-full bg-sage shrink-0" />
                   <span className="text-sm text-ink flex-1 truncate">
-                    {s.taskName || timeStr}
+                    {s.taskName}
                   </span>
                   <div className="w-14 h-1.5 bg-cream rounded-full overflow-hidden shrink-0">
                     <div
@@ -195,8 +272,8 @@ export default function TimerPage() {
                       style={{ width: `${Math.min((s.duration_seconds / 3600) * 100, 100)}%` }}
                     />
                   </div>
-                  <span className="text-xs font-medium text-ink-light shrink-0 tabular-nums">
-                    {formatDuration(s.duration_seconds)}
+                  <span className="text-xs font-medium text-ink-light shrink-0 font-numeric w-20 text-right">
+                    {formatTime(s.duration_seconds)}
                   </span>
                 </div>
               )

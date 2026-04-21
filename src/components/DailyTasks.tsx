@@ -32,11 +32,15 @@ export default function DailyTasks() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
 
-      const { data: profile } = await supabase.from('profiles').select('goal').eq('id', user.id).single()
-      if (profile) setGoal(profile.goal)
+      const [profileRes, taskRes] = await Promise.all([
+        supabase.from('profiles').select('goal').eq('id', user.id).single(),
+        supabase.from('daily_tasks').select('id, title, completed')
+          .eq('user_id', user.id).eq('date', today).order('created_at'),
+      ])
 
-      const { data: rows, error } = await supabase.from('daily_tasks').select('id, title, completed')
-        .eq('user_id', user.id).eq('date', today).order('created_at')
+      if (profileRes.data) setGoal(profileRes.data.goal)
+
+      const { data: rows, error } = taskRes
 
       if (error && (error.code === '42P01' || error.message?.includes('does not exist'))) {
         setTableExists(false)
