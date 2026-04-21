@@ -89,8 +89,8 @@ export default function DailyTasks() {
 
   if (!tableExists) {
     return (
-      <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100 p-4 shadow-sm">
-        <div className="text-sm text-gray-400 text-center py-4">
+      <div className="bg-paper rounded-2xl border border-cream p-4 shadow-sm">
+        <div className="text-sm text-ink-light text-center py-4">
           任务功能需要执行数据库迁移后才可使用
         </div>
       </div>
@@ -98,19 +98,24 @@ export default function DailyTasks() {
   }
 
   return (
-    <div className="bg-white/60 backdrop-blur-sm rounded-2xl border border-gray-100 p-4 shadow-sm">
+    <div className="relative bg-paper rounded-2xl border border-cream p-4 shadow-sm paper-texture">
+      {/* Washi tape */}
+      <div className="absolute -top-1.5 left-8 w-20 h-2.5 bg-rose-light opacity-50 rounded-sm rotate-[-1deg]" />
+
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-base font-semibold">今日任务</span>
+          <span className="text-sm font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+            今日任务
+          </span>
           {tasks.length > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-600 font-medium">
+            <span className="text-xs px-2 py-0.5 rounded-full bg-sage-light/40 text-sage-dark">
               {completedCount}/{tasks.length}
             </span>
           )}
         </div>
         <button
           onClick={() => setShowSuggestions(!showSuggestions)}
-          className="text-xs px-3 py-1.5 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 text-white font-medium shadow-sm hover:shadow-md transition-all active:scale-95"
+          className="text-xs px-3 py-1.5 rounded-full bg-lavender text-paper font-medium shadow-sm hover:shadow-md transition-all active:scale-95"
         >
           AI 推荐
         </button>
@@ -118,9 +123,9 @@ export default function DailyTasks() {
 
       {/* Progress bar */}
       {tasks.length > 0 && (
-        <div className="h-1.5 bg-gray-100 rounded-full mb-3 overflow-hidden">
+        <div className="h-1.5 bg-cream rounded-full mb-3 overflow-hidden">
           <div
-            className="h-full bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full transition-all duration-500"
+            className="h-full bg-sage rounded-full transition-all duration-500"
             style={{ width: `${(completedCount / tasks.length) * 100}%` }}
           />
         </div>
@@ -128,14 +133,14 @@ export default function DailyTasks() {
 
       {/* AI suggestions */}
       {showSuggestions && suggestions.length > 0 && (
-        <div className="mb-3 p-3 bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-100">
-          <p className="text-xs text-violet-600 font-medium mb-2">基于「{goal}」推荐：</p>
+        <div className="mb-3 p-3 bg-lavender-light/40 rounded-xl border border-lavender-light notebook-lines">
+          <p className="text-xs text-lavender font-medium mb-2">基于「{goal}」推荐：</p>
           <div className="flex flex-wrap gap-1.5">
             {suggestions.map((s) => (
               <button
                 key={s}
                 onClick={() => addTask(s)}
-                className="text-xs px-2.5 py-1.5 bg-white rounded-lg border border-violet-200 text-violet-700 hover:bg-violet-50 transition-colors active:scale-95"
+                className="text-xs px-2.5 py-1.5 bg-paper rounded-lg border border-lavender-light text-ink-light hover:bg-lavender-light/30 transition-colors active:scale-95"
               >
                 + {s}
               </button>
@@ -145,38 +150,37 @@ export default function DailyTasks() {
       )}
 
       {/* Task list */}
-      <div className="space-y-1.5 mb-3">
+      <div className="space-y-1 mb-3">
         {tasks.map((task) => {
           const isActiveTask = isTimerBusy && taskName === task.title
           return (
-            <div key={task.id} className={`flex items-center gap-2 group py-1.5 px-1 rounded-lg transition-colors ${
-              isActiveTask ? 'bg-violet-50' : ''
+            <div key={task.id} className={`flex items-center gap-2 group py-2 px-1.5 rounded-lg transition-colors ${
+              isActiveTask ? 'bg-sage-light/20' : ''
             }`}>
               <button
                 onClick={() => toggleTask(task.id, task.completed)}
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
                   task.completed
-                    ? 'bg-gradient-to-br from-emerald-400 to-teal-400 border-emerald-400 text-white'
-                    : 'border-gray-300 hover:border-emerald-400'
+                    ? 'bg-sage border-sage text-paper'
+                    : 'border-ink-light/30 hover:border-sage'
                 }`}
               >
                 {task.completed && (
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 )}
               </button>
-              <span className={`text-sm flex-1 ${task.completed ? 'line-through text-gray-400' : ''} ${isActiveTask ? 'text-violet-700 font-medium' : ''}`}>
+              <span className={`text-sm flex-1 ${task.completed ? 'line-through text-ink-light/40' : 'text-ink'} ${isActiveTask ? 'text-sage-dark font-medium' : ''}`}>
                 {task.title}
-                {isActiveTask && <span className="ml-1.5 text-xs text-violet-400 animate-pulse">计时中</span>}
+                {isActiveTask && <span className="ml-1.5 text-xs text-sage animate-pulse">计时中</span>}
               </span>
 
-              {/* Start timer for this task */}
               {!task.completed && !isActiveTask && (
                 <button
                   onClick={() => handleStartTask(task.title)}
                   disabled={isTimerBusy}
-                  className="opacity-0 group-hover:opacity-100 disabled:opacity-30 text-violet-400 hover:text-violet-600 transition-all active:scale-90 p-0.5"
+                  className="opacity-0 group-hover:opacity-100 disabled:opacity-30 text-sage hover:text-sage-dark transition-all active:scale-90 p-0.5"
                   title="开始计时"
                 >
                   <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -188,9 +192,9 @@ export default function DailyTasks() {
 
               <button
                 onClick={() => deleteTask(task.id)}
-                className="opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-400 transition-all text-xs p-0.5"
+                className="opacity-0 group-hover:opacity-100 text-ink-light/30 hover:text-rose-dark transition-all text-xs p-0.5"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -206,15 +210,16 @@ export default function DailyTasks() {
       >
         <input
           type="text"
-          placeholder="添加任务..."
+          placeholder="写下新任务..."
           value={newTask}
           onChange={(e) => setNewTask(e.target.value)}
-          className="flex-1 text-sm px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-100"
+          className="flex-1 text-sm px-3 py-2 bg-paper-warm border border-cream rounded-lg focus:outline-none focus:border-sage transition-colors"
+          style={{ fontFamily: "'Noto Serif SC', serif" }}
         />
         <button
           type="submit"
           disabled={!newTask.trim()}
-          className="px-3 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium disabled:opacity-30 active:scale-95 transition-transform"
+          className="px-3 py-2 bg-sage text-paper rounded-lg text-sm font-medium disabled:opacity-30 active:scale-95 transition-transform"
         >
           添加
         </button>

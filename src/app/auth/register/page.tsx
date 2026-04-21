@@ -29,45 +29,54 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center px-6">
+    <div className="min-h-full flex items-center justify-center px-6 bg-background">
       <div className="w-full max-w-sm">
-        <h1 className="text-3xl font-bold text-center mb-2">专注圈</h1>
-        <p className="text-center text-gray-500 mb-8">创建新账号</p>
+        <div className="bg-paper rounded-2xl border border-cream p-6 shadow-sm paper-texture">
+          <div className="text-center mb-6">
+            <div className="text-3xl mb-2">🌸</div>
+            <h1 className="text-2xl font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+              专注圈
+            </h1>
+            <p className="text-ink-light text-xs mt-1">创建新账号</p>
+          </div>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <input
-            type="email"
-            placeholder="邮箱"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-          />
-          <input
-            type="password"
-            placeholder="密码（至少6位）"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gray-900"
-          />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3 bg-gray-900 text-white rounded-lg font-medium disabled:opacity-50"
-          >
-            {loading ? '注册中...' : '注册'}
-          </button>
-        </form>
+          <form onSubmit={handleRegister} className="space-y-4">
+            <input
+              type="email"
+              placeholder="邮箱"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-sage transition-colors text-ink"
+              style={{ fontFamily: "'Noto Serif SC', serif" }}
+            />
+            <input
+              type="password"
+              placeholder="密码（至少6位）"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full px-4 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-sage transition-colors text-ink"
+            />
+            {error && <p className="text-rose-dark text-sm">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 bg-sage text-paper rounded-xl font-medium disabled:opacity-50 shadow-sm active:scale-[0.98] transition-all"
+              style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+            >
+              {loading ? '注册中...' : '注册'}
+            </button>
+          </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
-          已有账号？{' '}
-          <Link href="/auth/login" className="text-gray-900 font-medium underline">
-            登录
-          </Link>
-        </p>
+          <p className="text-center text-sm text-ink-light mt-5">
+            已有账号？{' '}
+            <Link href="/auth/login" className="text-sage-dark font-medium underline underline-offset-2">
+              登录
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   )

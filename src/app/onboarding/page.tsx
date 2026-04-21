@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Leaf, Flower } from '@/components/Botanicals'
 
 const PRESET_GOALS = ['备考雅思', '考研备考', '学习编程', '健身打卡', '读书计划']
 const TARGET_OPTIONS = [30, 60, 90, 120, 180, 240]
@@ -55,107 +56,115 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center px-6 py-10">
-      <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-200">
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold">设置你的资料</h1>
-          <p className="text-gray-400 text-sm mt-1">让大家认识你</p>
-        </div>
+    <div className="min-h-full flex items-center justify-center px-6 py-10 bg-background">
+      <div className="w-full max-w-sm relative">
+        {/* Decorative */}
+        <Leaf className="absolute -top-8 -right-2 w-10 h-14 text-sage-dark animate-sway" />
+        <Flower className="absolute -top-4 left-4 w-8 h-8 text-rose opacity-40" />
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">昵称</label>
-            <input
-              type="text"
-              placeholder="你的昵称"
-              value={nickname}
-              onChange={(e) => setNickname(e.target.value)}
-              required
-              maxLength={20}
-              className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
-            />
+        <div className="bg-paper rounded-2xl border border-cream p-6 shadow-sm paper-texture">
+          {/* Washi tape */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-3 bg-sage-light opacity-50 -translate-y-1 rounded-b-sm" />
+
+          <div className="text-center mb-6 pt-2">
+            <h1 className="text-xl font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+              设置你的资料
+            </h1>
+            <p className="text-ink-light text-xs mt-1">让大家认识你</p>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">学习目标</label>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {PRESET_GOALS.map((g) => (
-                <button
-                  key={g}
-                  type="button"
-                  onClick={() => selectGoal(g)}
-                  className={`px-3.5 py-2 rounded-xl text-sm border-2 transition-all active:scale-95 ${
-                    goal === g
-                      ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white border-transparent shadow-sm'
-                      : 'border-gray-200 hover:border-violet-300'
-                  }`}
-                >
-                  {g}
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => setGoal('custom')}
-                className={`px-3.5 py-2 rounded-xl text-sm border-2 transition-all active:scale-95 ${
-                  goal === 'custom'
-                    ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white border-transparent shadow-sm'
-                    : 'border-gray-200 hover:border-violet-300'
-                }`}
-              >
-                自定义
-              </button>
-            </div>
-            {goal === 'custom' && (
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium mb-1.5 text-ink">昵称</label>
               <input
                 type="text"
-                placeholder="输入你的目标"
-                value={customGoal}
-                onChange={(e) => setCustomGoal(e.target.value)}
+                placeholder="你的昵称"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
                 required
                 maxLength={20}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
+                className="w-full px-4 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-sage transition-colors text-ink"
+                style={{ fontFamily: "'Noto Serif SC', serif" }}
               />
-            )}
-          </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-2">每日目标时长</label>
-            {goal && TARGET_SUGGESTIONS[goal] && (
-              <p className="text-xs text-violet-500 mb-2">
-                AI 建议：「{goal}」推荐每天 {TARGET_SUGGESTIONS[goal]} 分钟
-              </p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              {TARGET_OPTIONS.map(mins => (
+            <div>
+              <label className="block text-sm font-medium mb-2 text-ink">学习目标</label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {PRESET_GOALS.map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => selectGoal(g)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-all active:scale-95 ${
+                      goal === g
+                        ? 'bg-sage text-paper border-sage'
+                        : 'border-cream text-ink-light hover:border-sage-light'
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
                 <button
-                  key={mins}
                   type="button"
-                  onClick={() => setTargetMinutes(mins)}
-                  className={`px-3.5 py-2 rounded-xl text-sm border-2 transition-all active:scale-95 ${
-                    targetMinutes === mins
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent shadow-sm'
-                      : 'border-gray-200 hover:border-emerald-300'
+                  onClick={() => setGoal('custom')}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-all active:scale-95 ${
+                    goal === 'custom'
+                      ? 'bg-sage text-paper border-sage'
+                      : 'border-cream text-ink-light hover:border-sage-light'
                   }`}
                 >
-                  {mins >= 60 ? `${mins / 60}小时` : `${mins}分钟`}
+                  自定义
                 </button>
-              ))}
+              </div>
+              {goal === 'custom' && (
+                <input
+                  type="text"
+                  placeholder="输入你的目标"
+                  value={customGoal}
+                  onChange={(e) => setCustomGoal(e.target.value)}
+                  required
+                  maxLength={20}
+                  className="w-full px-4 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-sage transition-colors text-ink"
+                />
+              )}
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading || !nickname.trim() || !finalGoal.trim()}
-            className="w-full py-3.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl font-medium disabled:opacity-50 shadow-lg shadow-violet-200 active:scale-[0.98] transition-all"
-          >
-            {loading ? '保存中...' : '开始打卡'}
-          </button>
-        </form>
+            <div>
+              <label className="block text-sm font-medium mb-2 text-ink">每日目标时长</label>
+              {goal && TARGET_SUGGESTIONS[goal] && (
+                <p className="text-xs text-lavender mb-2">
+                  推荐：「{goal}」每天 {TARGET_SUGGESTIONS[goal]} 分钟
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {TARGET_OPTIONS.map(mins => (
+                  <button
+                    key={mins}
+                    type="button"
+                    onClick={() => setTargetMinutes(mins)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-all active:scale-95 ${
+                      targetMinutes === mins
+                        ? 'bg-terracotta text-paper border-terracotta'
+                        : 'border-cream text-ink-light hover:border-terracotta-light'
+                    }`}
+                  >
+                    {mins >= 60 ? `${mins / 60}小时` : `${mins}分钟`}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading || !nickname.trim() || !finalGoal.trim()}
+              className="w-full py-3 bg-sage text-paper rounded-xl font-medium disabled:opacity-50 shadow-sm active:scale-[0.98] transition-all"
+              style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+            >
+              {loading ? '保存中...' : '开始打卡'}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )

@@ -1,23 +1,126 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=ZCOOL+XiaoWei&family=Ma+Shan+Zheng&display=swap');
 
 :root {
-  --background: #fafafa;
-  --foreground: #1a1a1a;
+  --background: #faf6f0;
+  --foreground: #4a4035;
+  --paper: #fefcf8;
+  --paper-warm: #f7f0e6;
+  --ink: #4a4035;
+  --ink-light: #8a7e72;
+  --sage: #a8b5a0;
+  --sage-light: #d4ddd0;
+  --sage-dark: #7a8f70;
+  --rose: #d4a5a0;
+  --rose-light: #f0ddd9;
+  --rose-dark: #b88a85;
+  --lavender: #b8a9c8;
+  --lavender-light: #e0d6ea;
+  --cream: #f0e6d3;
+  --butter: #e8d8a8;
+  --butter-light: #f5edda;
+  --terracotta: #c4956a;
+  --terracotta-light: #eedcc8;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-paper: var(--paper);
+  --color-paper-warm: var(--paper-warm);
+  --color-ink: var(--ink);
+  --color-ink-light: var(--ink-light);
+  --color-sage: var(--sage);
+  --color-sage-light: var(--sage-light);
+  --color-sage-dark: var(--sage-dark);
+  --color-rose: var(--rose);
+  --color-rose-light: var(--rose-light);
+  --color-rose-dark: var(--rose-dark);
+  --color-lavender: var(--lavender);
+  --color-lavender-light: var(--lavender-light);
+  --color-cream: var(--cream);
+  --color-butter: var(--butter);
+  --color-butter-light: var(--butter-light);
+  --color-terracotta: var(--terracotta);
+  --color-terracotta-light: var(--terracotta-light);
   --animate-pulse-slow: pulse-slow 3s ease-in-out infinite;
   --animate-pulse-slow-delay: pulse-slow 3s ease-in-out 1.5s infinite;
   --animate-in: slide-up 0.3s ease-out;
   --animate-float: float 6s ease-in-out infinite;
+  --animate-sway: sway 4s ease-in-out infinite;
+  --animate-bloom: bloom 0.5s ease-out;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: 'Noto Serif SC', 'Georgia', serif;
+}
+
+/* Paper texture overlay */
+.paper-texture {
+  position: relative;
+}
+.paper-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Washi tape effect */
+.washi-tape {
+  position: relative;
+}
+.washi-tape::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 20%;
+  width: 60%;
+  height: 12px;
+  background: var(--sage-light);
+  opacity: 0.7;
+  transform: rotate(-1deg);
+  border-radius: 1px;
+}
+
+/* Notebook lines */
+.notebook-lines {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    #e8dfd4 31px,
+    #e8dfd4 32px
+  );
+  background-position: 0 8px;
+}
+
+/* Torn paper edge */
+.torn-edge {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 500 10' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0,5 Q10,2 20,5 T40,5 T60,5 T80,5 T100,5 T120,5 T140,5 T160,5 T180,5 T200,5 T220,5 T240,5 T260,5 T280,5 T300,5 T320,5 T340,5 T360,5 T380,5 T400,5 T420,5 T440,5 T460,5 T480,5 T500,5 L500,0 L0,0 Z' fill='black'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 10px;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: bottom;
+}
+
+/* Stamp border */
+.stamp-border {
+  background: radial-gradient(circle, transparent 60%, var(--paper) 60%) -7px -7px / 14px 14px;
+}
+
+/* Decorative botanical elements */
+.botanical-leaf::after {
+  content: '';
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  background: var(--sage-light);
+  border-radius: 0 50% 50% 50%;
+  opacity: 0.3;
+  transform: rotate(45deg);
 }
 
 @keyframes pulse-slow {
@@ -33,4 +136,26 @@ body {
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
+}
+
+@keyframes sway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+
+@keyframes bloom {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--paper-warm);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--sage);
+  border-radius: 2px;
 }

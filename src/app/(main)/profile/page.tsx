@@ -3,18 +3,13 @@
 import { useEffect, useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import { Branch, Sprig } from '@/components/Botanicals'
 
 interface Profile {
   nickname: string
   goal: string
   email: string
   target_minutes?: number
-}
-
-interface SessionRecord {
-  id: string
-  duration_seconds: number
-  date: string
 }
 
 interface DailyTask {
@@ -39,7 +34,7 @@ function formatDate(dateStr: string): string {
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [sessions, setSessions] = useState<SessionRecord[]>([])
+  const [sessions, setSessions] = useState<{ id: string; duration_seconds: number; date: string }[]>([])
   const [tasks, setTasks] = useState<DailyTask[]>([])
   const [totalSeconds, setTotalSeconds] = useState(0)
   const [totalDays, setTotalDays] = useState(0)
@@ -56,7 +51,6 @@ export default function ProfilePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
 
-      // Fetch profile - try with target_minutes, fall back without
       let profileData: Profile | null = null
       const { data: p1, error: pErr } = await supabase
         .from('profiles')
@@ -65,7 +59,6 @@ export default function ProfilePage() {
         .single()
 
       if (pErr) {
-        // target_minutes column might not exist
         const { data: p2 } = await supabase
           .from('profiles')
           .select('nickname, goal, email')
@@ -78,7 +71,6 @@ export default function ProfilePage() {
 
       if (profileData) setProfile(profileData)
 
-      // Fetch sessions
       const { data: sessionData } = await supabase
         .from('sessions')
         .select('id, duration_seconds, date')
@@ -92,7 +84,6 @@ export default function ProfilePage() {
         setTotalDays(new Set(sessionData.map((s: { date: string }) => s.date)).size)
       }
 
-      // Fetch tasks (may not exist)
       const { data: taskData } = await supabase
         .from('daily_tasks')
         .select('id, title, completed, date')
@@ -115,69 +106,78 @@ export default function ProfilePage() {
   if (!profile) {
     return (
       <div className="p-6 flex justify-center">
-        <div className="w-8 h-8 border-2 border-violet-300 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-sage border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
 
   const targetMins = profile.target_minutes || 120
 
-  // Group sessions by date
   const sessionsByDate = sessions.reduce<Record<string, number>>((acc, s) => {
     acc[s.date] = (acc[s.date] || 0) + s.duration_seconds
     return acc
   }, {})
 
   const dateList = Object.keys(sessionsByDate).sort((a, b) => b.localeCompare(a))
-
-  // Get tasks for selected date
   const dateTasks = selectedDate ? tasks.filter(t => t.date === selectedDate) : []
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
-      {/* Profile header */}
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 text-white flex items-center justify-center text-2xl font-bold shadow-lg shadow-violet-200">
-          {profile.nickname.charAt(0)}
-        </div>
-        <div className="flex-1">
-          <div className="font-bold text-lg">{profile.nickname}</div>
-          <div className="text-sm text-gray-400">{profile.email}</div>
-          <div className="mt-1">
-            <span className="text-xs px-2.5 py-0.5 bg-violet-50 text-violet-600 rounded-full font-medium">
-              {profile.goal}
-            </span>
+      {/* Profile card */}
+      <div className="relative bg-paper rounded-2xl border border-cream p-5 shadow-sm paper-texture overflow-hidden">
+        <Branch className="absolute top-0 right-0 w-28 h-10 text-sage-dark" />
+        <div className="absolute top-0 left-10 w-16 h-2.5 bg-butter opacity-40 -translate-y-0.5 rounded-b-sm rotate-[-1deg]" />
+
+        <div className="flex items-center gap-4 relative">
+          <div className="w-14 h-14 rounded-xl bg-sage text-paper flex items-center justify-center text-xl font-bold shadow-sm border border-sage-dark/10">
+            {profile.nickname.charAt(0)}
+          </div>
+          <div className="flex-1">
+            <div className="font-bold text-lg text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+              {profile.nickname}
+            </div>
+            <div className="text-xs text-ink-light">{profile.email}</div>
+            <div className="mt-1">
+              <span className="text-xs px-2 py-0.5 bg-sage-light/30 text-sage-dark rounded border border-sage-light">
+                {profile.goal}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Stats cards */}
+      {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-2xl p-3 text-center">
-          <div className="text-2xl font-bold text-violet-700">{totalDays}</div>
-          <div className="text-xs text-violet-400 mt-0.5">打卡天数</div>
+        <div className="bg-paper rounded-xl border border-cream p-3 text-center paper-texture">
+          <div className="text-2xl font-bold text-sage-dark">{totalDays}</div>
+          <div className="text-xs text-ink-light mt-0.5">打卡天数</div>
         </div>
-        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-3 text-center">
-          <div className="text-2xl font-bold text-blue-700">
+        <div className="bg-paper rounded-xl border border-cream p-3 text-center paper-texture">
+          <div className="text-2xl font-bold text-terracotta">
             {totalSeconds >= 3600 ? `${Math.floor(totalSeconds / 3600)}h` : `${Math.floor(totalSeconds / 60)}m`}
           </div>
-          <div className="text-xs text-blue-400 mt-0.5">累计时长</div>
+          <div className="text-xs text-ink-light mt-0.5">累计时长</div>
         </div>
-        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-3 text-center">
-          <div className="text-2xl font-bold text-emerald-700">{targetMins}</div>
-          <div className="text-xs text-emerald-400 mt-0.5">日目标(分)</div>
+        <div className="bg-paper rounded-xl border border-cream p-3 text-center paper-texture">
+          <div className="text-2xl font-bold text-lavender">{targetMins}</div>
+          <div className="text-xs text-ink-light mt-0.5">日目标(分)</div>
         </div>
       </div>
 
-      {/* Session history */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-50">
-          <h2 className="font-semibold">学习记录</h2>
+      {/* History */}
+      <div className="bg-paper rounded-2xl border border-cream shadow-sm overflow-hidden paper-texture">
+        <div className="p-4 border-b border-cream/60">
+          <div className="flex items-center gap-2">
+            <Sprig className="w-4 h-6 text-sage-dark" />
+            <h2 className="font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+              学习记录
+            </h2>
+          </div>
         </div>
         {dateList.length === 0 ? (
-          <div className="p-6 text-center text-gray-300 text-sm">暂无记录</div>
+          <div className="p-6 text-center text-ink-light/40 text-sm">暂无记录</div>
         ) : (
-          <div className="divide-y divide-gray-50">
+          <div className="divide-y divide-cream/40">
             {dateList.slice(0, 14).map(date => {
               const secs = sessionsByDate[date]
               const progress = Math.min((secs / (targetMins * 60)) * 100, 100)
@@ -187,47 +187,43 @@ export default function ProfilePage() {
                 <div key={date}>
                   <button
                     onClick={() => setSelectedDate(isSelected ? null : date)}
-                    className="w-full flex items-center gap-3 p-3.5 hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-3.5 hover:bg-paper-warm transition-colors text-left"
                   >
                     <div className={`w-2 h-2 rounded-full shrink-0 ${
-                      progress >= 100 ? 'bg-emerald-400' : 'bg-violet-300'
+                      progress >= 100 ? 'bg-sage' : 'bg-rose'
                     }`} />
-                    <span className="text-sm font-medium w-16 shrink-0">{formatDate(date)}</span>
-                    <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                    <span className="text-sm font-medium w-14 shrink-0 text-ink">{formatDate(date)}</span>
+                    <div className="flex-1 h-1.5 bg-cream rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full ${
-                          progress >= 100
-                            ? 'bg-gradient-to-r from-emerald-400 to-teal-400'
-                            : 'bg-gradient-to-r from-violet-400 to-purple-400'
+                          progress >= 100 ? 'bg-sage' : 'bg-terracotta'
                         }`}
                         style={{ width: `${progress}%` }}
                       />
                     </div>
-                    <span className="text-sm font-medium text-gray-600 w-16 text-right shrink-0">
+                    <span className="text-sm font-medium text-ink w-16 text-right shrink-0">
                       {formatDuration(secs)}
                     </span>
-                    <svg className={`w-4 h-4 text-gray-300 shrink-0 transition-transform ${isSelected ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className={`w-3.5 h-3.5 text-ink-light/30 shrink-0 transition-transform ${isSelected ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
 
                   {isSelected && dateTasks.length > 0 && (
                     <div className="px-4 pb-3 pl-10">
-                      <div className="text-xs text-gray-400 mb-1.5">当日任务</div>
+                      <div className="text-xs text-ink-light mb-1.5">当日任务</div>
                       {dateTasks.map(t => (
                         <div key={t.id} className="flex items-center gap-2 py-1">
-                          <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                            t.completed
-                              ? 'bg-emerald-400 border-emerald-400 text-white'
-                              : 'border-gray-300'
+                          <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${
+                            t.completed ? 'bg-sage border-sage text-paper' : 'border-ink-light/30'
                           }`}>
                             {t.completed && (
-                              <svg className="w-2 h-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                              <svg className="w-1.5 h-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                               </svg>
                             )}
                           </div>
-                          <span className={`text-xs ${t.completed ? 'text-gray-400 line-through' : 'text-gray-600'}`}>
+                          <span className={`text-xs ${t.completed ? 'text-ink-light/40 line-through' : 'text-ink'}`}>
                             {t.title}
                           </span>
                         </div>
@@ -236,7 +232,7 @@ export default function ProfilePage() {
                   )}
                   {isSelected && dateTasks.length === 0 && (
                     <div className="px-4 pb-3 pl-10">
-                      <span className="text-xs text-gray-300">当日未设置任务</span>
+                      <span className="text-xs text-ink-light/30">当日未设置任务</span>
                     </div>
                   )}
                 </div>
@@ -250,13 +246,13 @@ export default function ProfilePage() {
       <div className="space-y-2.5">
         <button
           onClick={() => router.push('/onboarding')}
-          className="w-full py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium hover:bg-gray-100 active:scale-[0.99] transition-all"
+          className="w-full py-3 bg-paper border border-cream rounded-xl text-sm font-medium text-ink hover:bg-paper-warm active:scale-[0.99] transition-all"
         >
           修改资料
         </button>
         <button
           onClick={handleLogout}
-          className="w-full py-3 text-red-400 text-sm font-medium hover:bg-red-50 rounded-xl transition-colors"
+          className="w-full py-3 text-rose-dark text-sm font-medium hover:bg-rose-light/20 rounded-xl transition-colors"
         >
           退出登录
         </button>
