@@ -21,7 +21,7 @@ interface AITaskModalProps {
 }
 
 export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITaskModalProps) {
-  const [goal, setGoal] = useState(defaultGoal ? `我正在${defaultGoal}，帮我规划今天的学习任务` : '')
+  const [goal, setGoal] = useState('')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<AIResult | null>(null)
   const [error, setError] = useState('')
@@ -106,7 +106,7 @@ export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITask
               <textarea
                 value={goal}
                 onChange={e => setGoal(e.target.value)}
-                placeholder="例如：我要在3个月内通过雅思6.5"
+                placeholder={defaultGoal ? `例如：我正在${defaultGoal}，帮我规划今天的学习任务` : '例如：我要在3个月内通过雅思6.5'}
                 rows={3}
                 className="w-full text-sm px-3 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-lavender resize-none text-ink"
                 style={{ fontFamily: "'Noto Serif SC', serif" }}
