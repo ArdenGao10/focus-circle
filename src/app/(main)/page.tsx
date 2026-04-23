@@ -31,6 +31,13 @@ export default function TimerPage() {
   const elapsed = useLiveElapsed()
   const { todaySessions, addSession } = useAppData()
   const [localAdded, setLocalAdded] = useState<DisplaySession[]>([])
+  const [showWelcome, setShowWelcome] = useState(false)
+
+  // Show welcome card for new users
+  useEffect(() => {
+    const welcomed = localStorage.getItem('focuscircle_welcomed')
+    if (!welcomed) setShowWelcome(true)
+  }, [])
 
   // When a session ends, add to local + cache
   useEffect(() => {
@@ -85,6 +92,29 @@ export default function TimerPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
+      {/* Welcome card for new users */}
+      {showWelcome && todaySessions.length === 0 && (
+        <div className="relative bg-lavender-light/30 rounded-2xl border border-lavender-light p-4 shadow-sm">
+          <button
+            onClick={() => { setShowWelcome(false); localStorage.setItem('focuscircle_welcomed', 'true') }}
+            className="absolute top-3 right-3 text-ink-light/40 hover:text-ink-light transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <div className="flex items-start gap-3">
+            <span className="text-xl shrink-0 mt-0.5">🌸</span>
+            <div>
+              <p className="text-sm font-semibold text-ink mb-1" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>欢迎来到专注圈！</p>
+              <p className="text-xs text-ink-light leading-relaxed">
+                试试先在下面设一个今天要做的事，然后点「开始专注」，用正计时记录你真实的投入。不设倒计时、不设打卡天数，你学多久算多久。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Timer card */}
       <div className="relative bg-paper rounded-2xl border border-cream shadow-sm overflow-hidden paper-texture">
         <Leaf className="absolute top-3 right-4 w-8 h-12 text-sage-dark animate-sway" />
