@@ -40,7 +40,7 @@ function ProfileSkeleton() {
 }
 
 export default function ProfilePage() {
-  const { ready, userId, profile, dailyTasks } = useAppData()
+  const { ready, userId, profile, dailyTasks, pendingCount, retryPendingSessions } = useAppData()
   const [allSessions, setAllSessions] = useState<{ id: string; duration_seconds: number; date: string }[]>([])
   const [historyLoaded, setHistoryLoaded] = useState(false)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -182,6 +182,15 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {pendingCount > 0 && (
+        <button
+          onClick={retryPendingSessions}
+          className="w-full py-3 bg-butter-light border border-butter rounded-xl text-sm text-terracotta hover:bg-butter/30 active:scale-[0.99] transition-all"
+        >
+          有 {pendingCount} 条记录未同步，点此重试
+        </button>
+      )}
 
       <div className="space-y-2.5">
         <button onClick={() => router.push('/onboarding')} className="w-full py-3 bg-paper border border-cream rounded-xl text-sm font-medium text-ink hover:bg-paper-warm active:scale-[0.99] transition-all">修改资料</button>

@@ -40,9 +40,11 @@ interface AppData {
   leaderboard: LeaderboardEntry[]
   todaySessions: SessionRecord[]
   dailyTasks: DailyTask[]
+  pendingCount: number
   refreshLeaderboard: () => Promise<void>
   addSession: (s: SessionRecord) => void
   setDailyTasks: React.Dispatch<React.SetStateAction<DailyTask[]>>
+  retryPendingSessions: () => Promise<void>
 }
 
 const AppDataContext = createContext<AppData>({
@@ -52,13 +54,38 @@ const AppDataContext = createContext<AppData>({
   leaderboard: [],
   todaySessions: [],
   dailyTasks: [],
+  pendingCount: 0,
   refreshLeaderboard: async () => {},
   addSession: () => {},
   setDailyTasks: () => {},
+  retryPendingSessions: async () => {},
 })
 
 export function useAppData() {
   return useContext(AppDataContext)
+}
+
+const PENDING_KEY = 'focuscircle_pending_sessions'
+
+interface PendingSession {
+  duration_seconds: number
+  date: string
+  task_name: string
+  created_at: string
+  userId: string
+}
+
+function getPendingSessions(): PendingSession[] {
+  try {
+    return JSON.parse(localStorage.getItem(PENDING_KEY) || '[]')
+  } catch { return [] }
+}
+
+function setPendingSessionsStorage(sessions: PendingSession[]) {
+  try {
+    if (sessions.length === 0) localStorage.removeItem(PENDING_KEY)
+    else localStorage.setItem(PENDING_KEY, JSON.stringify(sessions))
+  } catch { /* ignore */ }
 }
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
@@ -68,6 +95,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [todaySessions, setTodaySessions] = useState<SessionRecord[]>([])
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([])
+  const [pendingCount, setPendingCount] = useState(0)
   const initRef = useRef(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -83,6 +111,33 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const addSession = useCallback((s: SessionRecord) => {
     setTodaySessions(prev => [s, ...prev])
+  }, [])
+
+  const retryPendingSessions = useCallback(async () => {
+    const pending = getPendingSessions()
+    if (pending.length === 0) return
+
+    const supabase = createClient()
+    const remaining: PendingSession[] = []
+
+    for (const s of pending) {
+      try {
+        const { error } = await supabase.from('sessions').insert({
+          user_id: s.userId,
+          duration_seconds: s.duration_seconds,
+          date: s.date,
+          task_name: s.task_name,
+        })
+        if (error) {
+          remaining.push(s)
+        }
+      } catch {
+        remaining.push(s)
+      }
+    }
+
+    setPendingSessionsStorage(remaining)
+    setPendingCount(remaining.length)
   }, [])
 
   useEffect(() => {
@@ -136,6 +191,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       if (tasksRes.data) setDailyTasks(tasksRes.data)
 
       setReady(true)
+
+      // Auto-retry pending sessions
+      const pending = getPendingSessions()
+      setPendingCount(pending.length)
+      if (pending.length > 0) {
+        retryPendingSessions()
+      }
     }
 
     init()
@@ -144,7 +206,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
-  }, [fetchLeaderboard])
+  }, [fetchLeaderboard, retryPendingSessions])
 
   return (
     <AppDataContext.Provider value={{
@@ -154,9 +216,11 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       leaderboard,
       todaySessions,
       dailyTasks,
+      pendingCount,
       refreshLeaderboard: fetchLeaderboard,
       addSession,
       setDailyTasks,
+      retryPendingSessions,
     }}>
       {children}
     </AppDataContext.Provider>
