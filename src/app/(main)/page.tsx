@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react'
 import { useTimer, useLiveElapsed } from '@/components/TimerContext'
 import { useAppData } from '@/components/AppDataContext'
 import DailyTasks from '@/components/DailyTasks'
-import FallingPetals from '@/components/FallingPetals'
 import { Leaf, Flower, Branch } from '@/components/Botanicals'
 
 const PERSONAL_FOCUS = '个人专注'
@@ -85,8 +84,7 @@ export default function TimerPage() {
   const todayTotal = displaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 space-y-5 relative">
-      <FallingPetals />
+    <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
       {/* Timer card */}
       <div className="relative bg-paper rounded-2xl border border-cream shadow-sm overflow-hidden paper-texture">
         <Leaf className="absolute top-3 right-4 w-8 h-12 text-sage-dark animate-sway" />
