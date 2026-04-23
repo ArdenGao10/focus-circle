@@ -59,6 +59,11 @@ export default function LoginPage() {
               minLength={6}
               className="w-full px-4 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-sage transition-colors text-ink"
             />
+            <div className="flex justify-end">
+              <Link href="/auth/forgot-password" className="text-xs text-ink-light hover:text-sage-dark transition-colors">
+                忘记密码？
+              </Link>
+            </div>
             {error && <p className="text-rose-dark text-sm">{error}</p>}
             <button
               type="submit"
