@@ -3,6 +3,7 @@ import FallingPetals from '@/components/FallingPetals'
 import { TimerProvider } from '@/components/TimerContext'
 import { AppDataProvider } from '@/components/AppDataContext'
 import SessionSummary from '@/components/SessionSummary'
+import TimerRecovery from '@/components/TimerRecovery'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <main className="flex-1 pb-16 overflow-y-auto">{children}</main>
           <BottomNav />
           <SessionSummary />
+          <TimerRecovery />
         </div>
       </TimerProvider>
     </AppDataProvider>
