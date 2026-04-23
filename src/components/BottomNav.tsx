@@ -9,6 +9,7 @@ import { useTimer } from './TimerContext'
 const tabs = [
   { href: '/', label: '计时', icon: '🌱' },
   { href: '/leaderboard', label: '排行', icon: '🌸' },
+  { href: '/square', label: '广场', icon: '📖' },
   { href: '/profile', label: '我的', icon: '🍃' },
 ]
 

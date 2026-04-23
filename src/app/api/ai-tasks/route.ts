@@ -1,0 +1,44 @@
+import { ZhipuAI } from 'zhipuai'
+
+const SYSTEM_PROMPT = `你是备考辅导助手。根据用户目标，拆解3个今日小任务。每个任务有简短标题和一句话说明。只返回JSON：{"today":[{"task":"标题","detail":"一句话说明","duration":"时长"}],"week":"本周概览一句话"}`
+
+export async function POST(request: Request) {
+  const { goal } = await request.json()
+
+  if (!goal || typeof goal !== 'string' || goal.trim().length === 0) {
+    return Response.json({ error: '请输入你的目标' }, { status: 400 })
+  }
+
+  const apiKey = process.env.ZHIPU_API_KEY
+  if (!apiKey) {
+    return Response.json({ error: 'AI服务未配置' }, { status: 500 })
+  }
+
+  try {
+    const client = new ZhipuAI({ apiKey })
+
+    const response = await client.chat.completions.create({
+      model: 'glm-4-flash',
+      max_tokens: 300,
+      temperature: 0.7,
+      messages: [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: goal.trim() },
+      ],
+    })
+
+    const content = response.choices?.[0]?.message?.content || ''
+
+    // Extract JSON from response (may be wrapped in markdown code block)
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      return Response.json({ error: 'AI返回格式错误，请重试' }, { status: 500 })
+    }
+
+    const parsed = JSON.parse(jsonMatch[0])
+    return Response.json(parsed)
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : 'AI服务暂时不可用'
+    return Response.json({ error: message }, { status: 500 })
+  }
+}

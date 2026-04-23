@@ -1,18 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useState } from 'react'
+import { useAppData } from '@/components/AppDataContext'
 import { useTimer, useLiveElapsed } from '@/components/TimerContext'
 import { Sprig, Flower } from '@/components/Botanicals'
-
-interface LeaderboardEntry {
-  id: string
-  nickname: string
-  goal: string
-  target_minutes?: number
-  total_days: number
-  today_seconds: number
-}
 
 function formatHMS(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -22,65 +13,40 @@ function formatHMS(seconds: number): string {
 }
 
 const RANK_COLORS = [
-  'bg-butter text-terracotta border-butter',       // 1st - gold
-  'bg-sage-light text-sage-dark border-sage-light', // 2nd - silver/sage
-  'bg-rose-light text-rose-dark border-rose-light', // 3rd - bronze/rose
+  'bg-butter text-terracotta border-butter',
+  'bg-sage-light text-sage-dark border-sage-light',
+  'bg-rose-light text-rose-dark border-rose-light',
 ]
 
 const RANK_ICONS = ['🌸', '🌿', '🍃']
 
+function SkeletonCard() {
+  return (
+    <div className="p-3.5 rounded-xl bg-paper border border-cream">
+      <div className="flex items-center gap-3">
+        <div className="w-7 h-4 bg-cream rounded animate-pulse" />
+        <div className="w-9 h-9 rounded-full bg-cream animate-pulse" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 bg-cream rounded w-2/3 animate-pulse" />
+          <div className="h-1.5 bg-cream rounded-full animate-pulse" />
+        </div>
+        <div className="w-16 h-4 bg-cream rounded animate-pulse" />
+      </div>
+    </div>
+  )
+}
+
 export default function LeaderboardPage() {
-  const [data, setData] = useState<LeaderboardEntry[]>([])
-  const [myId, setMyId] = useState<string | null>(null)
-  const [myGoal, setMyGoal] = useState<string | null>(null)
+  const { userId, profile, leaderboard, ready } = useAppData()
   const [filterGoal, setFilterGoal] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const initRef = useRef(false)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const { state: timerState, taskName } = useTimer()
   const elapsed = useLiveElapsed()
 
-  const fetchData = useCallback(async () => {
-    const supabase = createClient()
-    const { data: rows } = await supabase
-      .from('leaderboard')
-      .select('*')
-      .order('today_seconds', { ascending: false })
-
-    if (rows) setData(rows)
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    if (initRef.current) return
-    initRef.current = true
-
-    const supabase = createClient()
-    async function init() {
-      const leaderboardPromise = fetchData()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        setMyId(user.id)
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('goal')
-          .eq('id', user.id)
-          .single()
-        if (profile) setMyGoal(profile.goal)
-      }
-      await leaderboardPromise
-    }
-    init()
-
-    intervalRef.current = setInterval(fetchData, 30000)
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-  }, [fetchData])
-
+  const myGoal = profile?.goal || null
   const isTimerActive = timerState === 'running' || timerState === 'paused'
-  const displayData = data.map(entry => {
-    if (entry.id === myId && isTimerActive) {
+
+  const displayData = leaderboard.map(entry => {
+    if (entry.id === userId && isTimerActive) {
       return { ...entry, today_seconds: entry.today_seconds + elapsed }
     }
     return entry
@@ -94,7 +60,7 @@ export default function LeaderboardPage() {
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
-      {/* Header - notebook style */}
+      {/* Header */}
       <div className="relative mb-5">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
@@ -113,7 +79,6 @@ export default function LeaderboardPage() {
             </button>
           )}
         </div>
-        {/* Decorative line */}
         <div className="flex items-center gap-2 mt-2">
           <div className="flex-1 h-px bg-cream" />
           <Flower className="w-3 h-3 text-rose opacity-50" />
@@ -123,11 +88,9 @@ export default function LeaderboardPage() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-20 bg-paper-warm rounded-xl animate-pulse" />
-          ))}
+      {!ready ? (
+        <div className="space-y-2.5">
+          {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 bg-paper rounded-2xl border border-cream">
@@ -140,7 +103,7 @@ export default function LeaderboardPage() {
           {filtered.map((entry, i) => {
             const targetMins = entry.target_minutes || 120
             const progress = Math.min((entry.today_seconds / (targetMins * 60)) * 100, 100)
-            const isMe = entry.id === myId
+            const isMe = entry.id === userId
             const isTop3 = i < 3
             const isMeActive = isMe && isTimerActive
 
@@ -153,7 +116,6 @@ export default function LeaderboardPage() {
                     : 'bg-paper border border-cream hover:shadow-sm'
                 }`}
               >
-                {/* Washi tape for top 3 */}
                 {isTop3 && (
                   <div className={`absolute -top-1.5 left-6 w-12 h-2.5 rounded-sm opacity-50 ${
                     i === 0 ? 'bg-butter rotate-[-2deg]' : i === 1 ? 'bg-sage-light rotate-[1deg]' : 'bg-rose-light rotate-[-1deg]'
@@ -161,7 +123,6 @@ export default function LeaderboardPage() {
                 )}
 
                 <div className="flex items-center gap-3">
-                  {/* Rank */}
                   <div className="w-7 text-center shrink-0">
                     {isTop3 ? (
                       <span className="text-base">{RANK_ICONS[i]}</span>
@@ -170,11 +131,8 @@ export default function LeaderboardPage() {
                     )}
                   </div>
 
-                  {/* Avatar */}
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border ${
-                    isTop3
-                      ? RANK_COLORS[i]
-                      : 'bg-paper-warm text-ink-light border-cream'
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border relative ${
+                    isTop3 ? RANK_COLORS[i] : 'bg-paper-warm text-ink-light border-cream'
                   }`}>
                     {entry.nickname.charAt(0)}
                     {isMeActive && (
@@ -182,7 +140,6 @@ export default function LeaderboardPage() {
                     )}
                   </div>
 
-                  {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-1">
                       <span className={`text-sm truncate ${isMe ? 'font-bold text-terracotta' : 'font-medium text-ink'}`}>
@@ -195,21 +152,14 @@ export default function LeaderboardPage() {
                     </div>
 
                     {isMeActive && taskName && (
-                      <div className="text-xs text-sage-dark mb-1 truncate italic">
-                        {taskName}
-                      </div>
+                      <div className="text-xs text-sage-dark mb-1 truncate italic">{taskName}</div>
                     )}
 
-                    {/* Progress bar */}
                     <div className="flex items-center gap-2">
                       <div className="flex-1 h-1.5 bg-cream rounded-full overflow-hidden">
                         <div
                           className={`h-full rounded-full transition-all duration-700 ${
-                            progress >= 100
-                              ? 'bg-sage'
-                              : progress >= 50
-                              ? 'bg-terracotta'
-                              : 'bg-rose'
+                            progress >= 100 ? 'bg-sage' : progress >= 50 ? 'bg-terracotta' : 'bg-rose'
                           }`}
                           style={{ width: `${progress}%` }}
                         />
@@ -220,14 +170,11 @@ export default function LeaderboardPage() {
                     </div>
                   </div>
 
-                  {/* Time */}
                   <div className="text-right shrink-0 pl-1">
                     <div className={`text-sm font-bold font-numeric ${isMeActive ? 'text-sage-dark' : 'text-ink'}`}>
                       {formatHMS(entry.today_seconds)}
                     </div>
-                    <div className="text-xs text-ink-light/50">
-                      {entry.total_days}天
-                    </div>
+                    <div className="text-xs text-ink-light/50">{entry.total_days}天</div>
                   </div>
                 </div>
               </div>
