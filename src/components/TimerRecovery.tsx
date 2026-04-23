@@ -13,14 +13,14 @@ function formatDuration(seconds: number): string {
 }
 
 export default function TimerRecovery() {
-  const { recovery, recoverAndContinue, recoverAndSave, recoverDiscard } = useTimer()
+  const { zombie, zombieSave, zombieDiscard, zombieContinue } = useTimer()
   const [saving, setSaving] = useState(false)
 
-  if (!recovery) return null
+  if (!zombie) return null
 
   async function handleSave() {
     setSaving(true)
-    await recoverAndSave()
+    await zombieSave()
     setSaving(false)
   }
 
@@ -32,38 +32,38 @@ export default function TimerRecovery() {
         <div className="text-center mb-4 pt-2">
           <Flower className="w-8 h-8 mx-auto text-rose mb-2" />
           <h2 className="text-base font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
-            发现未完成的专注
+            发现一次超长专注记录
           </h2>
+          <p className="text-xs text-ink-light mt-1">看起来你可能忘记点结束了</p>
         </div>
 
         <div className="bg-paper-warm rounded-xl p-4 mb-5 border border-cream text-center">
           <div className="text-2xl font-bold text-ink" style={{ fontFamily: "'Noto Serif SC', serif" }}>
-            {formatDuration(recovery.elapsedSeconds)}
+            {formatDuration(zombie.elapsedSeconds)}
           </div>
-          {recovery.taskName && (
-            <div className="text-sm text-sage-dark mt-1">{recovery.taskName}</div>
+          {zombie.taskName && (
+            <div className="text-sm text-sage-dark mt-1">{zombie.taskName}</div>
           )}
-          <div className="text-xs text-ink-light mt-1">上次专注记录</div>
         </div>
 
         <div className="space-y-2.5">
           <button
-            onClick={recoverAndContinue}
-            className="w-full py-2.5 bg-sage text-paper rounded-xl text-sm font-medium active:scale-[0.98] transition-all"
-            style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
-          >
-            恢复并继续计时
-          </button>
-          <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full py-2.5 bg-lavender text-paper rounded-xl text-sm font-medium disabled:opacity-50 active:scale-[0.98] transition-all"
+            className="w-full py-2.5 bg-sage text-paper rounded-xl text-sm font-medium disabled:opacity-50 active:scale-[0.98] transition-all"
             style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
           >
-            {saving ? '保存中...' : '保存为已完成'}
+            {saving ? '保存中...' : '保存（按12小时计）'}
           </button>
           <button
-            onClick={recoverDiscard}
+            onClick={zombieContinue}
+            className="w-full py-2.5 bg-lavender text-paper rounded-xl text-sm font-medium active:scale-[0.98] transition-all"
+            style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+          >
+            继续计时
+          </button>
+          <button
+            onClick={zombieDiscard}
             className="w-full py-2.5 text-ink-light text-sm font-medium hover:bg-paper-warm rounded-xl transition-colors"
           >
             放弃这次记录

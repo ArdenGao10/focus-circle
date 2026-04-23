@@ -5,19 +5,17 @@ import { createClient } from '@/lib/supabase/client'
 
 const PERSONAL_FOCUS = '个人专注'
 const LS_KEY = 'focuscircle_active_timer'
-const HEARTBEAT_INTERVAL = 5000 // 5 seconds
-const AUTO_RECOVER_THRESHOLD = 2 * 60 * 1000 // 2 minutes
-const PROMPT_RECOVER_THRESHOLD = 8 * 60 * 60 * 1000 // 8 hours
+const ZOMBIE_THRESHOLD_MS = 12 * 60 * 60 * 1000 // 12 hours
+const ZOMBIE_CAP_SECONDS = 12 * 60 * 60 // cap saved duration at 12h
 
 type TimerState = 'idle' | 'running' | 'paused'
 
 interface PersistedTimer {
   state: 'running' | 'paused'
-  startTime: number
-  accumulatedMs: number
+  startTime: number      // absolute timestamp when current running segment began
+  accumulatedMs: number   // ms accumulated from previous segments (before pause/resume)
   taskName: string | null
   userId: string
-  lastUpdateAt: number
 }
 
 export interface SessionRecord {
@@ -27,7 +25,7 @@ export interface SessionRecord {
   taskName: string | null
 }
 
-interface RecoveryInfo {
+interface ZombieInfo {
   elapsedSeconds: number
   taskName: string | null
 }
@@ -38,16 +36,16 @@ interface TimerContextType {
   taskName: string | null
   lastSession: SessionRecord | null
   tickerKey: number
-  recovery: RecoveryInfo | null
+  zombie: ZombieInfo | null
   getElapsed: () => number
   start: (taskName?: string) => void
   pause: () => void
   resume: () => void
   end: () => Promise<void>
   clearLastSession: () => void
-  recoverAndContinue: () => void
-  recoverAndSave: () => Promise<void>
-  recoverDiscard: () => void
+  zombieSave: () => Promise<void>
+  zombieDiscard: () => void
+  zombieContinue: () => void
 }
 
 const TimerContext = createContext<TimerContextType | null>(null)
@@ -91,7 +89,7 @@ function readPersisted(): PersistedTimer | null {
 function writePersisted(data: PersistedTimer) {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(data))
-  } catch { /* quota exceeded — silently ignore */ }
+  } catch { /* quota exceeded */ }
 }
 
 function clearPersisted() {
@@ -100,87 +98,54 @@ function clearPersisted() {
   } catch { /* ignore */ }
 }
 
+/** Calculate total elapsed ms from persisted data */
+function calcElapsedMs(p: PersistedTimer): number {
+  if (p.state === 'paused') return p.accumulatedMs
+  return p.accumulatedMs + (Date.now() - p.startTime)
+}
+
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<TimerState>('idle')
   const [saving, setSaving] = useState(false)
   const [taskName, setTaskName] = useState<string | null>(null)
   const [lastSession, setLastSession] = useState<SessionRecord | null>(null)
   const [tickerKey, setTickerKey] = useState(0)
-  const [recovery, setRecovery] = useState<RecoveryInfo | null>(null)
+  const [zombie, setZombie] = useState<ZombieInfo | null>(null)
   const startTimeRef = useRef<number>(0)
   const accumulatedMsRef = useRef<number>(0)
   const userIdRef = useRef<string | null>(null)
-  const heartbeatRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const initRef = useRef(false)
 
-  const bumpTicker = useCallback(() => {
-    setTickerKey((v) => v + 1)
-  }, [])
+  const bumpTicker = useCallback(() => setTickerKey(v => v + 1), [])
 
+  // elapsed = accumulatedMs (in seconds) + live running segment
   const getElapsed = useCallback(() => {
     const accSec = Math.floor(accumulatedMsRef.current / 1000)
     if (state !== 'running') return accSec
     return accSec + Math.floor((Date.now() - startTimeRef.current) / 1000)
   }, [state])
 
-  // --- Persist to localStorage ---
-  const persist = useCallback((s: 'running' | 'paused') => {
-    if (!userIdRef.current) return
-    const accMs = s === 'running'
-      ? accumulatedMsRef.current
-      : accumulatedMsRef.current + (Date.now() - startTimeRef.current)
-
-    writePersisted({
-      state: s,
-      startTime: startTimeRef.current,
-      accumulatedMs: s === 'paused' ? accMs : accumulatedMsRef.current,
-      taskName: taskName,
-      userId: userIdRef.current,
-      lastUpdateAt: Date.now(),
-    })
-  }, [taskName])
-
-  // --- Heartbeat: update lastUpdateAt every 5s while running ---
-  const startHeartbeat = useCallback(() => {
-    if (heartbeatRef.current) clearInterval(heartbeatRef.current)
-    heartbeatRef.current = setInterval(() => {
-      const existing = readPersisted()
-      if (existing) {
-        existing.lastUpdateAt = Date.now()
-        writePersisted(existing)
-      }
-    }, HEARTBEAT_INTERVAL)
-  }, [])
-
-  const stopHeartbeat = useCallback(() => {
-    if (heartbeatRef.current) {
-      clearInterval(heartbeatRef.current)
-      heartbeatRef.current = null
-    }
-  }, [])
-
   // --- Timer actions ---
+
   const start = useCallback((name?: string) => {
     setLastSession(null)
+    const now = Date.now()
     setTaskName(name || null)
     accumulatedMsRef.current = 0
-    startTimeRef.current = Date.now()
+    startTimeRef.current = now
     setState('running')
     bumpTicker()
 
-    // persist
     if (userIdRef.current) {
       writePersisted({
         state: 'running',
-        startTime: Date.now(),
+        startTime: now,
         accumulatedMs: 0,
         taskName: name || null,
         userId: userIdRef.current,
-        lastUpdateAt: Date.now(),
       })
     }
-    startHeartbeat()
-  }, [bumpTicker, startHeartbeat])
+  }, [bumpTicker])
 
   const pause = useCallback(() => {
     if (state !== 'running') return
@@ -188,44 +153,38 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     accumulatedMsRef.current = nowAccMs
     setState('paused')
     bumpTicker()
-    stopHeartbeat()
 
-    // persist
     if (userIdRef.current) {
       writePersisted({
         state: 'paused',
-        startTime: startTimeRef.current,
+        startTime: 0,
         accumulatedMs: nowAccMs,
         taskName,
         userId: userIdRef.current,
-        lastUpdateAt: Date.now(),
       })
     }
-  }, [state, bumpTicker, taskName, stopHeartbeat])
+  }, [state, bumpTicker, taskName])
 
   const resume = useCallback(() => {
     if (state !== 'paused') return
-    startTimeRef.current = Date.now()
+    const now = Date.now()
+    startTimeRef.current = now
     setState('running')
     bumpTicker()
-    startHeartbeat()
 
-    // persist
     if (userIdRef.current) {
       writePersisted({
         state: 'running',
-        startTime: Date.now(),
+        startTime: now,
         accumulatedMs: accumulatedMsRef.current,
         taskName,
         userId: userIdRef.current,
-        lastUpdateAt: Date.now(),
       })
     }
-  }, [state, bumpTicker, taskName, startHeartbeat])
+  }, [state, bumpTicker, taskName])
 
   const end = useCallback(async () => {
     const finalElapsed = getElapsed()
-    stopHeartbeat()
 
     if (finalElapsed < 1) {
       setState('idle')
@@ -268,7 +227,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     }
 
     if (!saveSuccess) {
-      // Save to pending sessions for later retry (Task 2 will enhance this)
       try {
         const pending = JSON.parse(localStorage.getItem('focuscircle_pending_sessions') || '[]')
         pending.push({
@@ -282,8 +240,9 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       } catch { /* ignore */ }
     }
 
-    setSaving(false)
+    // Only clear localStorage AFTER successful save (or pending fallback)
     clearPersisted()
+    setSaving(false)
     setLastSession({
       duration_seconds: finalElapsed,
       date: dateStr,
@@ -294,59 +253,15 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     accumulatedMsRef.current = 0
     setTaskName(null)
     bumpTicker()
-  }, [getElapsed, taskName, bumpTicker, stopHeartbeat])
+  }, [getElapsed, taskName, bumpTicker])
 
   const clearLastSession = useCallback(() => setLastSession(null), [])
 
-  // --- Recovery actions (user responds to recovery prompt) ---
-  const recoverAndContinue = useCallback(() => {
+  // --- Zombie session actions (only shown when elapsed > 12h) ---
+
+  const zombieSave = useCallback(async () => {
     const persisted = readPersisted()
-    if (!persisted) { setRecovery(null); return }
-
-    // Restore state — timer keeps running from where it left off
-    accumulatedMsRef.current = persisted.state === 'paused'
-      ? persisted.accumulatedMs
-      : persisted.accumulatedMs + (Date.now() - persisted.lastUpdateAt)
-    // Use lastUpdateAt as approximate resume point since JS was dead between then and now
-    // For paused: accumulated is exact. For running: we count up to lastUpdateAt (last heartbeat).
-    // The gap between lastUpdateAt and now is lost time — we don't count it.
-
-    startTimeRef.current = Date.now()
-    setTaskName(persisted.taskName)
-    setState('running')
-    bumpTicker()
-    startHeartbeat()
-    setRecovery(null)
-
-    // Update persisted
-    if (userIdRef.current) {
-      writePersisted({
-        state: 'running',
-        startTime: Date.now(),
-        accumulatedMs: accumulatedMsRef.current,
-        taskName: persisted.taskName,
-        userId: userIdRef.current,
-        lastUpdateAt: Date.now(),
-      })
-    }
-  }, [bumpTicker, startHeartbeat])
-
-  const recoverAndSave = useCallback(async () => {
-    const persisted = readPersisted()
-    if (!persisted) { setRecovery(null); return }
-
-    // Calculate total elapsed up to lastUpdateAt
-    let totalMs = persisted.accumulatedMs
-    if (persisted.state === 'running') {
-      totalMs += persisted.lastUpdateAt - persisted.startTime
-    }
-    const totalSec = Math.floor(totalMs / 1000)
-
-    if (totalSec < 1) {
-      clearPersisted()
-      setRecovery(null)
-      return
-    }
+    if (!persisted) { setZombie(null); return }
 
     const dateStr = new Date(persisted.startTime).toISOString().split('T')[0]
     const normalizedTaskName = persisted.taskName?.trim() || PERSONAL_FOCUS
@@ -357,34 +272,47 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       if (user) {
         await sb.from('sessions').insert({
           user_id: user.id,
-          duration_seconds: totalSec,
+          duration_seconds: ZOMBIE_CAP_SECONDS,
           date: dateStr,
           task_name: normalizedTaskName,
         })
       }
-    } catch { /* will be caught by pending sessions in Task 2 */ }
+    } catch { /* pending sessions will catch it */ }
 
     clearPersisted()
-    setRecovery(null)
+    setZombie(null)
     setLastSession({
-      duration_seconds: totalSec,
+      duration_seconds: ZOMBIE_CAP_SECONDS,
       date: dateStr,
       created_at: new Date().toISOString(),
       taskName: normalizedTaskName,
     })
   }, [])
 
-  const recoverDiscard = useCallback(() => {
+  const zombieDiscard = useCallback(() => {
     clearPersisted()
-    setRecovery(null)
+    setZombie(null)
   }, [])
 
-  // --- Init: check for persisted timer on mount ---
+  const zombieContinue = useCallback(() => {
+    const persisted = readPersisted()
+    if (!persisted) { setZombie(null); return }
+
+    // Restore as-is — user genuinely wants to continue
+    accumulatedMsRef.current = persisted.accumulatedMs
+    startTimeRef.current = persisted.startTime
+    setTaskName(persisted.taskName)
+    setState(persisted.state)
+    bumpTicker()
+    setZombie(null)
+  }, [bumpTicker])
+
+  // --- Init: restore from localStorage on mount ---
   useEffect(() => {
     if (initRef.current) return
     initRef.current = true
 
-    async function checkRecovery() {
+    async function restore() {
       const sb = createClient()
       const { data: { user } } = await sb.auth.getUser()
       if (!user) return
@@ -399,74 +327,37 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         return
       }
 
-      const timeSinceLastUpdate = Date.now() - persisted.lastUpdateAt
+      const elapsedMs = calcElapsedMs(persisted)
+      const elapsedSec = Math.floor(elapsedMs / 1000)
 
-      // Calculate total elapsed
-      let totalMs = persisted.accumulatedMs
-      if (persisted.state === 'running') {
-        totalMs += persisted.lastUpdateAt - persisted.startTime
-      }
-      const totalSec = Math.floor(totalMs / 1000)
-
-      if (totalSec < 1) {
+      if (elapsedSec < 1) {
         clearPersisted()
         return
       }
 
-      if (timeSinceLastUpdate >= PROMPT_RECOVER_THRESHOLD) {
-        // >= 8 hours: zombie data, discard
-        clearPersisted()
-        return
-      }
-
-      if (timeSinceLastUpdate < AUTO_RECOVER_THRESHOLD) {
-        // < 2 minutes: auto-recover silently
-        accumulatedMsRef.current = persisted.accumulatedMs
-        if (persisted.state === 'running') {
-          // Add time from startTime to lastUpdateAt (not to now — gap is untracked)
-          accumulatedMsRef.current = persisted.accumulatedMs + (persisted.lastUpdateAt - persisted.startTime)
-          startTimeRef.current = Date.now()
-          setState('running')
-          startHeartbeat()
-        } else {
-          // paused
-          setState('paused')
-        }
-        setTaskName(persisted.taskName)
-        bumpTicker()
-
-        // Update persisted with fresh timestamp
-        writePersisted({
-          ...persisted,
-          accumulatedMs: accumulatedMsRef.current,
-          startTime: persisted.state === 'running' ? Date.now() : persisted.startTime,
-          lastUpdateAt: Date.now(),
+      // Zombie check: > 12 hours → prompt user
+      if (elapsedMs > ZOMBIE_THRESHOLD_MS) {
+        setZombie({
+          elapsedSeconds: elapsedSec,
+          taskName: persisted.taskName,
         })
         return
       }
 
-      // 2 min ~ 8 hours: prompt user
-      setRecovery({
-        elapsedSeconds: totalSec,
-        taskName: persisted.taskName,
-      })
+      // Normal restore — seamless, no dialog
+      accumulatedMsRef.current = persisted.accumulatedMs
+      if (persisted.state === 'running') {
+        startTimeRef.current = persisted.startTime
+        setState('running')
+      } else {
+        setState('paused')
+      }
+      setTaskName(persisted.taskName)
+      bumpTicker()
     }
 
-    checkRecovery()
-  }, [bumpTicker, startHeartbeat])
-
-  // Track userId changes
-  useEffect(() => {
-    // Update userId ref when AppDataContext provides it
-    // This is handled in init, but we also need it for start() calls
-  }, [])
-
-  // Cleanup heartbeat on unmount
-  useEffect(() => {
-    return () => {
-      if (heartbeatRef.current) clearInterval(heartbeatRef.current)
-    }
-  }, [])
+    restore()
+  }, [bumpTicker])
 
   const value = useMemo(() => ({
     state,
@@ -474,17 +365,17 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     taskName,
     lastSession,
     tickerKey,
-    recovery,
+    zombie,
     getElapsed,
     start,
     pause,
     resume,
     end,
     clearLastSession,
-    recoverAndContinue,
-    recoverAndSave,
-    recoverDiscard,
-  }), [state, saving, taskName, lastSession, tickerKey, recovery, getElapsed, start, pause, resume, end, clearLastSession, recoverAndContinue, recoverAndSave, recoverDiscard])
+    zombieSave,
+    zombieDiscard,
+    zombieContinue,
+  }), [state, saving, taskName, lastSession, tickerKey, zombie, getElapsed, start, pause, resume, end, clearLastSession, zombieSave, zombieDiscard, zombieContinue])
 
   return (
     <TimerContext.Provider value={value}>
