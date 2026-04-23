@@ -31,7 +31,7 @@ export default function FeedbackPage() {
         <div className="bg-paper-warm rounded-xl border border-cream p-6 text-center">
           <div className="w-40 h-40 mx-auto bg-cream rounded-lg flex items-center justify-center text-ink-light text-sm mb-3">
             {/* Placeholder for QR code — replace public/feedback/wechat-qr.png */}
-            <span className="text-xs text-ink-light/50">微信二维码占位</span>
+            <img src="/feedback/wechat-qr.png" alt="微信二维码" className="w-full h-full object-contain" />
           </div>
           <p className="text-xs text-ink-light">扫码加好友，备注「专注圈反馈」</p>
         </div>
@@ -47,7 +47,7 @@ export default function FeedbackPage() {
         </div>
         <p className="text-sm text-ink-light mb-3">不方便加微信？可以匿名说出你的想法。</p>
         <a
-          href="#"
+          href="https://wj.qq.com/s2/26444940/2dd3/"
           target="_blank"
           rel="noopener noreferrer"
           className="block w-full py-2.5 bg-lavender text-paper rounded-xl text-sm font-medium text-center active:scale-[0.98] transition-all"
@@ -66,8 +66,8 @@ export default function FeedbackPage() {
         </div>
         <div className="flex items-center gap-2">
           <Sprig className="w-3 h-5 text-sage-dark shrink-0" />
-          <a href="mailto:your-email@example.com" className="text-sm text-lavender hover:underline">
-            your-email@example.com
+          <a href="mailto:18611965296@163.com" className="text-sm text-lavender hover:underline">
+            18611965296@163.com
           </a>
         </div>
       </div>
