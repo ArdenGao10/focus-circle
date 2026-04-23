@@ -194,6 +194,9 @@ export default function ProfilePage() {
 
       <div className="space-y-2.5">
         <button onClick={() => router.push('/onboarding')} className="w-full py-3 bg-paper border border-cream rounded-xl text-sm font-medium text-ink hover:bg-paper-warm active:scale-[0.99] transition-all">修改资料</button>
+        <button onClick={() => router.push('/feedback')} className="w-full py-3 bg-paper border border-cream rounded-xl text-sm font-medium text-ink hover:bg-paper-warm active:scale-[0.99] transition-all flex items-center justify-center gap-2">
+          <span>💬</span> 帮助与反馈
+        </button>
         <button onClick={handleLogout} className="w-full py-3 text-rose-dark text-sm font-medium hover:bg-rose-light/20 rounded-xl transition-colors">退出登录</button>
       </div>
     </div>
