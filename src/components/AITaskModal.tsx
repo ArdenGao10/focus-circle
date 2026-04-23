@@ -26,6 +26,7 @@ export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITask
   const [result, setResult] = useState<AIResult | null>(null)
   const [error, setError] = useState('')
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [retryCount, setRetryCount] = useState(0)
 
   async function handleSubmit() {
     if (!goal.trim()) return
@@ -43,17 +44,21 @@ export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITask
       const data = await res.json()
 
       if (!res.ok) {
+        setRetryCount(c => c + 1)
         setError(data.error || '请求失败')
         return
       }
 
       if (data.today && Array.isArray(data.today)) {
         setResult(data)
+        setRetryCount(0)
         setSelected(new Set(data.today.map((_: TaskResult, i: number) => i)))
       } else {
+        setRetryCount(c => c + 1)
         setError('AI返回格式错误，请重试')
       }
     } catch {
+      setRetryCount(c => c + 1)
       setError('网络错误，请重试')
     } finally {
       setLoading(false)
@@ -114,7 +119,19 @@ export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITask
               />
 
               {error && (
-                <p className="text-xs text-rose-dark bg-rose-light/30 px-3 py-2 rounded-lg">{error}</p>
+                <div className="bg-rose-light/30 px-3 py-2 rounded-lg space-y-1.5">
+                  <p className="text-xs text-rose-dark">{error}</p>
+                  {retryCount >= 3 && (
+                    <p className="text-xs text-ink-light">多次失败可能是网络问题或 AI 服务限流，建议稍后再试</p>
+                  )}
+                  <button
+                    onClick={handleSubmit}
+                    disabled={loading}
+                    className="text-xs text-lavender font-medium hover:underline"
+                  >
+                    点击重试
+                  </button>
+                </div>
               )}
 
               <button
