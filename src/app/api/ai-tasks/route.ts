@@ -5,65 +5,67 @@ const SYSTEM_PROMPT = `你是备考辅导助手。根据用户目标，拆解3�
 const GLM_ENDPOINT = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
 
 export async function POST(request: Request) {
-  const { goal } = await request.json()
-
-  if (!goal || typeof goal !== 'string' || goal.trim().length === 0) {
-    return Response.json({ error: '请输入你的目标' }, { status: 400 })
-  }
-
-  const apiKey = process.env.ZHIPU_API_KEY
-  if (!apiKey) {
-    return Response.json({ error: 'AI服务未配置' }, { status: 500 })
-  }
-
-  let res: Response
-
   try {
-    res = await fetch(GLM_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'glm-4-flash',
-        max_tokens: 300,
-        temperature: 0.7,
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: goal.trim() },
-        ],
-      }),
-    })
-  } catch {
-    return Response.json({ error: '网络异常，请稍后再试' }, { status: 502 })
-  }
+    const { goal } = await request.json()
 
-  if (!res.ok) {
-    // Log for debugging but return generic error to user
-    const body = await res.text().catch(() => '')
-    console.error(`GLM API error ${res.status}: ${body}`)
-    return Response.json({ error: 'AI 服务暂时不可用，请稍后再试' }, { status: 502 })
-  }
+    if (!goal || typeof goal !== 'string' || goal.trim().length === 0) {
+      return Response.json({ error: '请输入你的目标' }, { status: 400 })
+    }
 
-  let data: { choices?: { message?: { content?: string } }[] }
-  try {
-    data = await res.json()
-  } catch {
-    return Response.json({ error: 'AI 返回格式错误' }, { status: 500 })
-  }
+    const apiKey = process.env.ZHIPU_API_KEY
+    if (!apiKey) {
+      return Response.json({ error: 'AI服务未配置（环境变量缺失）' }, { status: 500 })
+    }
 
-  const content = data.choices?.[0]?.message?.content || ''
+    let res: Response
 
-  const jsonMatch = content.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) {
-    return Response.json({ error: 'AI 返回格式错误，请重试' }, { status: 500 })
-  }
+    try {
+      res = await fetch(GLM_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'glm-4-flash',
+          max_tokens: 300,
+          temperature: 0.7,
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: goal.trim() },
+          ],
+        }),
+      })
+    } catch (e) {
+      return Response.json({ error: `网络异常: ${e instanceof Error ? e.message : String(e)}` }, { status: 502 })
+    }
 
-  try {
-    const parsed = JSON.parse(jsonMatch[0])
-    return Response.json(parsed)
-  } catch {
-    return Response.json({ error: 'AI 返回格式错误，请重试' }, { status: 500 })
+    if (!res.ok) {
+      const body = await res.text().catch(() => '')
+      return Response.json({ error: `AI 服务错误 ${res.status}: ${body.slice(0, 200)}` }, { status: 502 })
+    }
+
+    let data: { choices?: { message?: { content?: string } }[] }
+    try {
+      data = await res.json()
+    } catch {
+      return Response.json({ error: 'AI 返回格式错误' }, { status: 500 })
+    }
+
+    const content = data.choices?.[0]?.message?.content || ''
+
+    const jsonMatch = content.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) {
+      return Response.json({ error: 'AI 返回格式错误，请重试' }, { status: 500 })
+    }
+
+    try {
+      const parsed = JSON.parse(jsonMatch[0])
+      return Response.json(parsed)
+    } catch {
+      return Response.json({ error: 'AI 返回格式错误，请重试' }, { status: 500 })
+    }
+  } catch (e) {
+    return Response.json({ error: `服务器错误: ${e instanceof Error ? e.message : String(e)}` }, { status: 500 })
   }
 }
