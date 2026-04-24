@@ -41,11 +41,20 @@ export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITask
         body: JSON.stringify({ goal: goal.trim() }),
       })
 
-      const data = await res.json()
+      const text = await res.text()
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let data: any
+      try {
+        data = JSON.parse(text)
+      } catch {
+        setRetryCount(c => c + 1)
+        setError(`服务器错误 (${res.status}): ${text.slice(0, 100)}`)
+        return
+      }
 
       if (!res.ok) {
         setRetryCount(c => c + 1)
-        setError(data.error || '请求失败')
+        setError((data.error as string) || '请求失败')
         return
       }
 

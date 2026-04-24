@@ -1,5 +1,3 @@
-export const runtime = 'edge'
-
 const SYSTEM_PROMPT = `你是备考辅导助手。根据用户目标，拆解3个今日小任务。每个任务有简短标题和一句话说明。只返回JSON：{"today":[{"task":"标题","detail":"一句话说明","duration":"时长"}],"week":"本周概览一句话"}`
 
 const GLM_ENDPOINT = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
