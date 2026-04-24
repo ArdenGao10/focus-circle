@@ -1,11 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import PWARegister from "@/components/PWARegister";
 import "./globals.css";
 
-const numericFont = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["500", "700"],
+const numericFont = localFont({
+  src: [
+    {
+      path: "../fonts/SpaceGrotesk-Medium.woff2",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../fonts/SpaceGrotesk-Bold.woff2",
+      weight: "700",
+      style: "normal",
+    },
+  ],
   variable: "--font-numeric",
   display: "swap",
 });
