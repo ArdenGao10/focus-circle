@@ -1,3 +1,11 @@
+// 临时调试端点，确认环境变量是否可用
+export async function GET() {
+  const hasKey = !!process.env.ZHIPU_API_KEY
+  const keyPrefix = process.env.ZHIPU_API_KEY?.slice(0, 6) ?? 'undefined'
+  const envKeys = Object.keys(process.env).filter(k => !k.startsWith('__') && !k.startsWith('npm_')).sort()
+  return Response.json({ hasKey, keyPrefix, envKeys: envKeys.slice(0, 30) })
+}
+
 const SYSTEM_PROMPT = `你是备考辅导助手。根据用户目标，拆解3个今日小任务。每个任务有简短标题和一句话说明。只返回JSON：{"today":[{"task":"标题","detail":"一句话说明","duration":"时长"}],"week":"本周概览一句话"}`
 
 const GLM_ENDPOINT = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
