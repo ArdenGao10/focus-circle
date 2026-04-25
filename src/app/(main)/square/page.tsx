@@ -1,19 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useAppData } from '@/components/AppDataContext'
+import { useAppData, type SquarePost } from '@/components/AppDataContext'
 import { Flower, Sprig } from '@/components/Botanicals'
-
-interface Post {
-  id: string
-  title: string
-  content: string
-  link: string | null
-  created_at: string
-  nickname: string
-  goal: string
-}
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -27,62 +17,17 @@ function timeAgo(dateStr: string): string {
 }
 
 export default function SquarePage() {
-  const { ready, userId } = useAppData()
-  const [posts, setPosts] = useState<Post[]>([])
-  const [loading, setLoading] = useState(true)
+  const { ready, userId, squarePosts, loadSquarePosts, setSquarePosts } = useAppData()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [link, setLink] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [todayPosted, setTodayPosted] = useState(false)
   const [error, setError] = useState('')
-  const fetchedRef = useRef(false)
 
   useEffect(() => {
-    if (fetchedRef.current) return
-    fetchedRef.current = true
-
-    const supabase = createClient()
-    async function load() {
-      const { data } = await supabase
-        .from('posts')
-        .select('id, title, content, link, created_at, user_id')
-        .order('created_at', { ascending: false })
-        .limit(50)
-
-      if (data) {
-        // Fetch nicknames for all unique user_ids
-        const userIds = [...new Set(data.map((p: { user_id: string }) => p.user_id))]
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, nickname, goal')
-          .in('id', userIds)
-
-        const profileMap = new Map<string, { id: string; nickname: string; goal: string }>(profiles?.map((p: { id: string; nickname: string; goal: string }) => [p.id, p]) || [])
-
-        const enriched: Post[] = data.map((p: { id: string; title: string; content: string; link: string | null; created_at: string; user_id: string }) => ({
-          id: p.id,
-          title: p.title,
-          content: p.content,
-          link: p.link,
-          created_at: p.created_at,
-          nickname: profileMap.get(p.user_id)?.nickname || '匿名',
-          goal: profileMap.get(p.user_id)?.goal || '',
-        }))
-
-        setPosts(enriched)
-
-        // Check if current user posted today
-        if (userId) {
-          const today = new Date().toISOString().split('T')[0]
-          const posted = data.some((p: { user_id: string; created_at: string }) => p.user_id === userId && p.created_at.startsWith(today))
-          setTodayPosted(posted)
-        }
-      }
-      setLoading(false)
-    }
-    load()
-  }, [userId])
+    loadSquarePosts()
+  }, [loadSquarePosts])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -132,11 +77,12 @@ export default function SquarePage() {
         .eq('id', userId)
         .single()
 
-      setPosts(prev => [{
+      const newPost: SquarePost = {
         ...data,
         nickname: profile?.nickname || '匿名',
         goal: profile?.goal || '',
-      }, ...prev])
+      }
+      setSquarePosts(prev => prev === null ? [newPost] : [newPost, ...prev])
     }
 
     setTitle('')
@@ -145,6 +91,8 @@ export default function SquarePage() {
     setTodayPosted(true)
     setSubmitting(false)
   }
+
+  const posts = squarePosts
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 flex flex-col" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
@@ -165,7 +113,7 @@ export default function SquarePage() {
 
       {/* Posts list */}
       <div className="flex-1 space-y-3 mb-4">
-        {loading ? (
+        {posts === null ? (
           [1, 2, 3].map(i => (
             <div key={i} className="bg-paper rounded-xl border border-cream p-4 animate-pulse space-y-2">
               <div className="h-3 bg-cream rounded w-1/3" />

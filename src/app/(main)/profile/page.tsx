@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useAppData } from '@/components/AppDataContext'
@@ -40,27 +40,13 @@ function ProfileSkeleton() {
 }
 
 export default function ProfilePage() {
-  const { ready, userId, profile, dailyTasks, pendingCount, retryPendingSessions } = useAppData()
-  const [allSessions, setAllSessions] = useState<{ id: string; duration_seconds: number; date: string }[]>([])
-  const [historyLoaded, setHistoryLoaded] = useState(false)
+  const { ready, userId, profile, dailyTasks, pendingCount, retryPendingSessions, profileHistory, loadProfileHistory } = useAppData()
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const router = useRouter()
-  const fetchedRef = useRef(false)
 
-  // Only fetch ALL sessions history (not just today) — this is profile-specific
   useEffect(() => {
-    if (fetchedRef.current || !userId) return
-    fetchedRef.current = true
-
-    const supabase = createClient()
-    async function load() {
-      const { data } = await supabase.from('sessions').select('id, duration_seconds, date')
-        .eq('user_id', userId).order('date', { ascending: false }).limit(50)
-      if (data) setAllSessions(data as { id: string; duration_seconds: number; date: string }[])
-      setHistoryLoaded(true)
-    }
-    load()
-  }, [userId])
+    loadProfileHistory()
+  }, [loadProfileHistory])
 
   async function handleLogout() {
     const supabase = createClient()
@@ -70,6 +56,9 @@ export default function ProfilePage() {
   }
 
   if (!profile) return <ProfileSkeleton />
+
+  const allSessions = profileHistory || []
+  const historyLoaded = profileHistory !== null
 
   const targetMins = profile.target_minutes || 120
   const totalSeconds = allSessions.reduce((sum, s) => sum + s.duration_seconds, 0)

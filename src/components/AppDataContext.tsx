@@ -33,6 +33,22 @@ interface DailyTask {
   date: string
 }
 
+export interface SquarePost {
+  id: string
+  title: string
+  content: string
+  link: string | null
+  created_at: string
+  nickname: string
+  goal: string
+}
+
+interface HistorySession {
+  id: string
+  duration_seconds: number
+  date: string
+}
+
 interface AppData {
   ready: boolean
   userId: string | null
@@ -45,6 +61,13 @@ interface AppData {
   addSession: (s: SessionRecord) => void
   setDailyTasks: React.Dispatch<React.SetStateAction<DailyTask[]>>
   retryPendingSessions: () => Promise<void>
+  // Square posts cache
+  squarePosts: SquarePost[] | null
+  loadSquarePosts: (force?: boolean) => Promise<void>
+  setSquarePosts: React.Dispatch<React.SetStateAction<SquarePost[] | null>>
+  // Profile history cache
+  profileHistory: HistorySession[] | null
+  loadProfileHistory: (force?: boolean) => Promise<void>
 }
 
 const AppDataContext = createContext<AppData>({
@@ -59,6 +82,11 @@ const AppDataContext = createContext<AppData>({
   addSession: () => {},
   setDailyTasks: () => {},
   retryPendingSessions: async () => {},
+  squarePosts: null,
+  loadSquarePosts: async () => {},
+  setSquarePosts: () => {},
+  profileHistory: null,
+  loadProfileHistory: async () => {},
 })
 
 export function useAppData() {
@@ -96,6 +124,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [todaySessions, setTodaySessions] = useState<SessionRecord[]>([])
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([])
   const [pendingCount, setPendingCount] = useState(0)
+  const [squarePosts, setSquarePosts] = useState<SquarePost[] | null>(null)
+  const [profileHistory, setProfileHistory] = useState<HistorySession[] | null>(null)
+  const squareLoadedAtRef = useRef(0)
+  const historyLoadedAtRef = useRef(0)
   const initRef = useRef(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -111,6 +143,13 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const addSession = useCallback((s: SessionRecord) => {
     setTodaySessions(prev => [s, ...prev])
+    // Also update profile history if loaded
+    const historyEntry: HistorySession = {
+      id: s.id,
+      duration_seconds: s.duration_seconds,
+      date: new Date(s.created_at).toISOString().split('T')[0],
+    }
+    setProfileHistory(prev => prev === null ? null : [historyEntry, ...prev].slice(0, 50))
   }, [])
 
   const retryPendingSessions = useCallback(async () => {
@@ -139,6 +178,57 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     setPendingSessionsStorage(remaining)
     setPendingCount(remaining.length)
   }, [])
+
+  const CACHE_TTL = 60_000
+
+  const loadSquarePostsFn = useCallback(async (force = false) => {
+    if (!userId) return
+    if (!force && squarePosts !== null && (Date.now() - squareLoadedAtRef.current) < CACHE_TTL) return
+
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('posts')
+      .select('id, title, content, link, created_at, user_id')
+      .order('created_at', { ascending: false })
+      .limit(50)
+
+    if (data) {
+      const userIds = [...new Set(data.map((p: { user_id: string }) => p.user_id))]
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, nickname, goal')
+        .in('id', userIds)
+
+      const profileMap = new Map(profiles?.map((p: { id: string; nickname: string; goal: string }) => [p.id, p]) || [])
+
+      const enriched: SquarePost[] = data.map((p: { id: string; title: string; content: string; link: string | null; created_at: string; user_id: string }) => ({
+        id: p.id,
+        title: p.title,
+        content: p.content,
+        link: p.link,
+        created_at: p.created_at,
+        nickname: (profileMap.get(p.user_id) as { nickname: string; goal: string } | undefined)?.nickname || '匿名',
+        goal: (profileMap.get(p.user_id) as { nickname: string; goal: string } | undefined)?.goal || '',
+      }))
+
+      setSquarePosts(enriched)
+      squareLoadedAtRef.current = Date.now()
+    }
+  }, [userId, squarePosts])
+
+  const loadProfileHistoryFn = useCallback(async (force = false) => {
+    if (!userId) return
+    if (!force && profileHistory !== null && (Date.now() - historyLoadedAtRef.current) < CACHE_TTL) return
+
+    const supabase = createClient()
+    const { data } = await supabase.from('sessions').select('id, duration_seconds, date')
+      .eq('user_id', userId).order('date', { ascending: false }).limit(50)
+
+    if (data) {
+      setProfileHistory(data as HistorySession[])
+      historyLoadedAtRef.current = Date.now()
+    }
+  }, [userId, profileHistory])
 
   useEffect(() => {
     if (initRef.current) return
@@ -221,6 +311,11 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       addSession,
       setDailyTasks,
       retryPendingSessions,
+      squarePosts,
+      loadSquarePosts: loadSquarePostsFn,
+      setSquarePosts,
+      profileHistory,
+      loadProfileHistory: loadProfileHistoryFn,
     }}>
       {children}
     </AppDataContext.Provider>
