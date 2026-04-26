@@ -113,10 +113,9 @@ async function syncActiveTimer(
   try {
     const sb = createClient()
     if (action === 'delete') {
-      const { error } = await sb.from('active_timers').delete().eq('user_id', userId)
-      if (error) console.error('[syncActiveTimer] delete error:', error)
+      await sb.from('active_timers').delete().eq('user_id', userId)
     } else if (payload) {
-      const { error } = await sb.from('active_timers').upsert({
+      await sb.from('active_timers').upsert({
         user_id: userId,
         state: payload.state,
         started_at: payload.started_at,
@@ -124,10 +123,9 @@ async function syncActiveTimer(
         task_text: payload.task_text,
         updated_at: new Date().toISOString(),
       })
-      if (error) console.error('[syncActiveTimer] upsert error:', error)
     }
-  } catch (err) {
-    console.error('[syncActiveTimer]', action, err)
+  } catch {
+    // Never block timer UX
   }
 }
 
@@ -163,7 +161,6 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     setState('running')
     bumpTicker()
 
-    console.log('[Timer.start] userIdRef:', userIdRef.current)
     if (userIdRef.current) {
       writePersisted({
         state: 'running',
