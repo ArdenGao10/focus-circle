@@ -31,6 +31,12 @@
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .page { page-break-after: always; break-after: page; }
     .page:last-child { page-break-after: avoid; }
+    .features, .showcase-row, .arch-box, .highlights, .feature-card, .phone-wrap {
+      page-break-inside: avoid; break-inside: avoid;
+    }
+    .section-title, .section-sub {
+      page-break-after: avoid; break-after: avoid;
+    }
   }
 
   .page {
@@ -327,7 +333,7 @@
   </div>
 </div>
 
-<!-- ==================== PAGE 2: Features + Screenshots ==================== -->
+<!-- ==================== PAGE 2: Features ==================== -->
 <div class="page">
   <div class="section-title">核心功能</div>
   <div class="section-sub">围绕「记录真实投入」理念设计，不设倒计时、不设打卡天数</div>
@@ -355,39 +361,7 @@
     </div>
   </div>
 
-  <div class="section-title">产品截图</div>
-  <div class="section-sub">植物系视觉风格，温暖、沉静、无干扰</div>
-
-  <div class="showcase-row">
-    <div class="phone-wrap">
-      <div class="phone-frame"><img src="screenshots/计时器页面.jpg" alt="计时器"></div>
-      <div class="phone-label">专注计时</div>
-    </div>
-    <div class="phone-wrap">
-      <div class="phone-frame"><img src="screenshots/排行榜页面.jpg" alt="排行榜"></div>
-      <div class="phone-label">实时排行榜</div>
-    </div>
-    <div class="phone-wrap">
-      <div class="phone-frame"><img src="screenshots/AI拆解任务页面.jpg" alt="AI任务"></div>
-      <div class="phone-label">AI 任务拆解</div>
-    </div>
-  </div>
-</div>
-
-<!-- ==================== PAGE 3: Architecture + More Screenshots ==================== -->
-<div class="page">
-  <div class="showcase-row" style="margin-top:8px;">
-    <div class="phone-wrap">
-      <div class="phone-frame"><img src="screenshots/学习广场页面.jpg" alt="学习广场"></div>
-      <div class="phone-label">学习广场</div>
-    </div>
-    <div class="phone-wrap">
-      <div class="phone-frame"><img src="screenshots/个人档案页面.jpg" alt="个人档案"></div>
-      <div class="phone-label">个人档案</div>
-    </div>
-  </div>
-
-  <div class="section-title" style="margin-top:28px;">技术架构</div>
+  <div class="section-title">技术架构</div>
   <div class="section-sub">Serverless 全栈架构，零服务器运维</div>
 
   <div class="tech-row">
@@ -431,7 +405,42 @@
       <div class="desc">Cloudflare Workers (via OpenNext) + Vercel 双平台部署，全球低延迟</div>
     </div>
   </div>
+</div>
 
+<!-- ==================== PAGE 3: Screenshots ==================== -->
+<div class="page">
+  <div class="section-title">产品截图</div>
+  <div class="section-sub">植物系视觉风格，温暖、沉静、无干扰</div>
+
+  <div class="showcase-row">
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/计时器页面.jpg" alt="计时器"></div>
+      <div class="phone-label">专注计时</div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/排行榜页面.jpg" alt="排行榜"></div>
+      <div class="phone-label">实时排行榜</div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/AI拆解任务页面.jpg" alt="AI任务"></div>
+      <div class="phone-label">AI 任务拆解</div>
+    </div>
+  </div>
+
+  <div class="showcase-row" style="margin-top:16px;">
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/学习广场页面.jpg" alt="学习广场"></div>
+      <div class="phone-label">学习广场</div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/个人档案页面.jpg" alt="个人档案"></div>
+      <div class="phone-label">个人档案</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 4: Technical Highlights ==================== -->
+<div class="page">
   <div class="section-title">技术亮点</div>
   <div class="section-sub">工程设计中的关键决策</div>
 
