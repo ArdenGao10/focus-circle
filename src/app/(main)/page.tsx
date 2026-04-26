@@ -82,10 +82,27 @@ export default function TimerPage() {
     return [merged, ...others]
   }, [todaySessions, localAdded])
 
-  const sessionsTotal = displaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
-  const todayTotal = sessionsTotal + elapsed
   const activeTaskName = normalizeTaskName(taskName)
-  const showRecords = displaySessions.length > 0 || state !== 'idle'
+  const isActive = state !== 'idle'
+
+  // Check if the active task already has a historical row
+  const activeHasHistory = isActive && displaySessions.some(s => s.taskName === activeTaskName)
+
+  const sessionsTotal = displaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
+
+  // Cumulative total refreshes every 5s
+  const [totalElapsed, setTotalElapsed] = useState(0)
+  useEffect(() => {
+    if (!isActive) { setTotalElapsed(0); return }
+    setTotalElapsed(elapsed)
+    const interval = setInterval(() => setTotalElapsed(prev => prev + 5), 5000)
+    return () => clearInterval(interval)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isActive])
+  useEffect(() => { if (!isActive) setTotalElapsed(0) }, [isActive])
+
+  const todayTotal = sessionsTotal + (isActive ? totalElapsed : 0)
+  const showRecords = displaySessions.length > 0 || isActive
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
@@ -176,8 +193,8 @@ export default function TimerPage() {
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-sage-light/40 text-sage-dark font-numeric">共 {formatTime(todayTotal)}</span>
           </div>
           <div className="space-y-2">
-            {/* Live entry for active timer */}
-            {state !== 'idle' && (
+            {/* Live-only row: only when active task has no historical session */}
+            {isActive && !activeHasHistory && (
               <div className="flex items-center gap-3 py-1.5">
                 <div className="w-2 h-2 rounded-full bg-sage shrink-0 animate-pulse" />
                 <span className="text-sm text-sage-dark flex-1 truncate font-medium">{activeTaskName}</span>
@@ -187,16 +204,20 @@ export default function TimerPage() {
                 <span className="text-xs font-medium text-sage-dark shrink-0 font-numeric w-20 text-right">{formatTime(elapsed)}</span>
               </div>
             )}
-            {displaySessions.map((s) => (
-              <div key={s.id} className="flex items-center gap-3 py-1.5">
-                <div className="w-2 h-2 rounded-full bg-sage shrink-0" />
-                <span className="text-sm text-ink flex-1 truncate">{s.taskName}</span>
-                <div className="w-14 h-1.5 bg-cream rounded-full overflow-hidden shrink-0">
-                  <div className="h-full bg-sage rounded-full" style={{ width: `${Math.min((s.duration_seconds / 3600) * 100, 100)}%` }} />
+            {displaySessions.map((s) => {
+              const isLive = isActive && s.taskName === activeTaskName
+              const totalSec = isLive ? s.duration_seconds + elapsed : s.duration_seconds
+              return (
+                <div key={s.id} className="flex items-center gap-3 py-1.5">
+                  <div className={`w-2 h-2 rounded-full bg-sage shrink-0 ${isLive ? 'animate-pulse' : ''}`} />
+                  <span className={`text-sm flex-1 truncate ${isLive ? 'text-sage-dark font-medium' : 'text-ink'}`}>{s.taskName}</span>
+                  <div className="w-14 h-1.5 bg-cream rounded-full overflow-hidden shrink-0">
+                    <div className="h-full bg-sage rounded-full transition-all" style={{ width: `${Math.min((totalSec / 3600) * 100, 100)}%` }} />
+                  </div>
+                  <span className={`text-xs font-medium shrink-0 font-numeric w-20 text-right ${isLive ? 'text-sage-dark' : 'text-ink-light'}`}>{formatTime(totalSec)}</span>
                 </div>
-                <span className="text-xs font-medium text-ink-light shrink-0 font-numeric w-20 text-right">{formatTime(s.duration_seconds)}</span>
-              </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       )}
