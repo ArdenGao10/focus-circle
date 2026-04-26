@@ -113,9 +113,10 @@ async function syncActiveTimer(
   try {
     const sb = createClient()
     if (action === 'delete') {
-      await sb.from('active_timers').delete().eq('user_id', userId)
+      const { error } = await sb.from('active_timers').delete().eq('user_id', userId)
+      if (error) console.error('[syncActiveTimer] delete error:', error)
     } else if (payload) {
-      await sb.from('active_timers').upsert({
+      const { error } = await sb.from('active_timers').upsert({
         user_id: userId,
         state: payload.state,
         started_at: payload.started_at,
@@ -123,9 +124,10 @@ async function syncActiveTimer(
         task_text: payload.task_text,
         updated_at: new Date().toISOString(),
       })
+      if (error) console.error('[syncActiveTimer] upsert error:', error)
     }
-  } catch {
-    // Never block timer UX
+  } catch (err) {
+    console.error('[syncActiveTimer]', action, err)
   }
 }
 
