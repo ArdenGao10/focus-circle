@@ -29,7 +29,7 @@ function normalizeTaskName(taskName: string | null | undefined): string {
 export default function TimerPage() {
   const { state, saving, taskName, start, pause, resume, end, lastSession } = useTimer()
   const elapsed = useLiveElapsed()
-  const { todaySessions, addSession } = useAppData()
+  const { todaySessions, addSession, activeTimers, userId } = useAppData()
   const [localAdded, setLocalAdded] = useState<DisplaySession[]>([])
   const [showWelcome, setShowWelcome] = useState(false)
 
@@ -88,7 +88,29 @@ export default function TimerPage() {
     return [merged, ...others]
   }, [todaySessions, localAdded])
 
-  const todayTotal = displaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
+  // Compute active timer elapsed for current user (synced via Realtime)
+  const myActiveTimer = activeTimers.find(t => t.user_id === userId)
+  const [tick, setTick] = useState(0)
+
+  useEffect(() => {
+    if (!myActiveTimer || myActiveTimer.state !== 'running') return
+    const id = setInterval(() => setTick(v => v + 1), 1000)
+    return () => clearInterval(id)
+  }, [myActiveTimer?.state, myActiveTimer?.user_id])
+
+  void tick
+
+  const activeElapsed = useMemo(() => {
+    if (!myActiveTimer) return 0
+    let ms = myActiveTimer.accumulated_ms
+    if (myActiveTimer.state === 'running') {
+      ms += Date.now() - new Date(myActiveTimer.started_at).getTime()
+    }
+    return Math.max(0, Math.floor(ms / 1000))
+  }, [myActiveTimer, tick])
+
+  const sessionsTotal = displaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
+  const todayTotal = sessionsTotal + activeElapsed
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
