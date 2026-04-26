@@ -163,6 +163,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     setState('running')
     bumpTicker()
 
+    console.log('[Timer.start] userIdRef:', userIdRef.current)
     if (userIdRef.current) {
       writePersisted({
         state: 'running',
