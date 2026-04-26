@@ -104,6 +104,31 @@ function calcElapsedMs(p: PersistedTimer): number {
   return p.accumulatedMs + (Date.now() - p.startTime)
 }
 
+/** Fire-and-forget upsert/update/delete to active_timers. Never blocks the main flow. */
+async function syncActiveTimer(
+  userId: string,
+  action: 'upsert' | 'delete',
+  payload?: { state: 'running' | 'paused'; started_at: string; accumulated_ms: number; task_text: string | null },
+) {
+  try {
+    const sb = createClient()
+    if (action === 'delete') {
+      await sb.from('active_timers').delete().eq('user_id', userId)
+    } else if (payload) {
+      await sb.from('active_timers').upsert({
+        user_id: userId,
+        state: payload.state,
+        started_at: payload.started_at,
+        accumulated_ms: payload.accumulated_ms,
+        task_text: payload.task_text,
+        updated_at: new Date().toISOString(),
+      })
+    }
+  } catch {
+    // Never block timer UX
+  }
+}
+
 export function TimerProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<TimerState>('idle')
   const [saving, setSaving] = useState(false)
@@ -144,6 +169,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         taskName: name || null,
         userId: userIdRef.current,
       })
+      syncActiveTimer(userIdRef.current, 'upsert', {
+        state: 'running',
+        started_at: new Date(now).toISOString(),
+        accumulated_ms: 0,
+        task_text: name || null,
+      })
     }
   }, [bumpTicker])
 
@@ -162,6 +193,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         taskName,
         userId: userIdRef.current,
       })
+      syncActiveTimer(userIdRef.current, 'upsert', {
+        state: 'paused',
+        started_at: new Date().toISOString(),
+        accumulated_ms: nowAccMs,
+        task_text: taskName,
+      })
     }
   }, [state, bumpTicker, taskName])
 
@@ -179,6 +216,12 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         accumulatedMs: accumulatedMsRef.current,
         taskName,
         userId: userIdRef.current,
+      })
+      syncActiveTimer(userIdRef.current, 'upsert', {
+        state: 'running',
+        started_at: new Date(now).toISOString(),
+        accumulated_ms: accumulatedMsRef.current,
+        task_text: taskName,
       })
     }
   }, [state, bumpTicker, taskName])
@@ -242,6 +285,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
     // Only clear localStorage AFTER successful save (or pending fallback)
     clearPersisted()
+    if (userIdRef.current) syncActiveTimer(userIdRef.current, 'delete')
     setSaving(false)
     setLastSession({
       duration_seconds: finalElapsed,

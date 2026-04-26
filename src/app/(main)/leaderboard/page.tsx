@@ -1,8 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useAppData } from '@/components/AppDataContext'
-import { useTimer, useLiveElapsed } from '@/components/TimerContext'
+import { useState, useEffect } from 'react'
+import { useAppData, type ActiveTimer } from '@/components/AppDataContext'
 import { Sprig, Flower } from '@/components/Botanicals'
 
 function formatHMS(seconds: number): string {
@@ -10,6 +9,15 @@ function formatHMS(seconds: number): string {
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+}
+
+/** Compute extra seconds from an active timer */
+function activeTimerElapsed(timer: ActiveTimer): number {
+  let ms = timer.accumulated_ms
+  if (timer.state === 'running') {
+    ms += Date.now() - new Date(timer.started_at).getTime()
+  }
+  return Math.max(0, Math.floor(ms / 1000))
 }
 
 const RANK_COLORS = [
@@ -37,19 +45,32 @@ function SkeletonCard() {
 }
 
 export default function LeaderboardPage() {
-  const { userId, profile, leaderboard, ready } = useAppData()
+  const { userId, profile, leaderboard, ready, activeTimers } = useAppData()
   const [filterGoal, setFilterGoal] = useState(false)
-  const { state: timerState, taskName } = useTimer()
-  const elapsed = useLiveElapsed()
+  const [tick, setTick] = useState(0)
 
   const myGoal = profile?.goal || null
-  const isTimerActive = timerState === 'running' || timerState === 'paused'
+
+  // Build a map of active timers by user_id
+  const timerMap = new Map(activeTimers.map(t => [t.user_id, t]))
+  const hasAnyRunning = activeTimers.some(t => t.state === 'running')
+
+  // Tick every second when anyone is actively running
+  useEffect(() => {
+    if (!hasAnyRunning) return
+    const id = setInterval(() => setTick(v => v + 1), 1000)
+    return () => clearInterval(id)
+  }, [hasAnyRunning])
+
+  // Suppress unused var warning — tick is used to trigger re-render
+  void tick
 
   const displayData = leaderboard.map(entry => {
-    if (entry.id === userId && isTimerActive) {
-      return { ...entry, today_seconds: entry.today_seconds + elapsed }
+    const timer = timerMap.get(entry.id)
+    if (timer) {
+      return { ...entry, today_seconds: entry.today_seconds + activeTimerElapsed(timer), _active: true, _taskText: timer.task_text }
     }
-    return entry
+    return { ...entry, _active: false, _taskText: null as string | null }
   })
 
   const sorted = [...displayData].sort((a, b) => b.today_seconds - a.today_seconds)
@@ -105,7 +126,7 @@ export default function LeaderboardPage() {
             const progress = Math.min((entry.today_seconds / (targetMins * 60)) * 100, 100)
             const isMe = entry.id === userId
             const isTop3 = i < 3
-            const isMeActive = isMe && isTimerActive
+            const isActive = entry._active
 
             return (
               <div
@@ -135,7 +156,7 @@ export default function LeaderboardPage() {
                     isTop3 ? RANK_COLORS[i] : 'bg-paper-warm text-ink-light border-cream'
                   }`}>
                     {entry.nickname.charAt(0)}
-                    {isMeActive && (
+                    {isActive && (
                       <span className="absolute w-2.5 h-2.5 bg-sage rounded-full border-2 border-paper -bottom-0.5 -right-0.5 animate-pulse" />
                     )}
                   </div>
@@ -151,8 +172,8 @@ export default function LeaderboardPage() {
                       </span>
                     </div>
 
-                    {isMeActive && taskName && (
-                      <div className="text-xs text-sage-dark mb-1 truncate italic">{taskName}</div>
+                    {isActive && entry._taskText && (
+                      <div className="text-xs text-sage-dark mb-1 truncate italic">{entry._taskText}</div>
                     )}
 
                     <div className="flex items-center gap-2">
@@ -171,7 +192,7 @@ export default function LeaderboardPage() {
                   </div>
 
                   <div className="text-right shrink-0 pl-1">
-                    <div className={`text-sm font-bold font-numeric ${isMeActive ? 'text-sage-dark' : 'text-ink'}`}>
+                    <div className={`text-sm font-bold font-numeric ${isActive ? 'text-sage-dark' : 'text-ink'}`}>
                       {formatHMS(entry.today_seconds)}
                     </div>
                     <div className="text-xs text-ink-light/50">{entry.total_days}天</div>

@@ -49,6 +49,15 @@ interface HistorySession {
   date: string
 }
 
+export interface ActiveTimer {
+  user_id: string
+  started_at: string
+  accumulated_ms: number
+  state: 'running' | 'paused'
+  task_text: string | null
+  updated_at: string
+}
+
 interface AppData {
   ready: boolean
   userId: string | null
@@ -68,6 +77,8 @@ interface AppData {
   // Profile history cache
   profileHistory: HistorySession[] | null
   loadProfileHistory: (force?: boolean) => Promise<void>
+  // Active timers (realtime)
+  activeTimers: ActiveTimer[]
 }
 
 const AppDataContext = createContext<AppData>({
@@ -87,6 +98,7 @@ const AppDataContext = createContext<AppData>({
   setSquarePosts: () => {},
   profileHistory: null,
   loadProfileHistory: async () => {},
+  activeTimers: [],
 })
 
 export function useAppData() {
@@ -126,10 +138,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [pendingCount, setPendingCount] = useState(0)
   const [squarePosts, setSquarePosts] = useState<SquarePost[] | null>(null)
   const [profileHistory, setProfileHistory] = useState<HistorySession[] | null>(null)
+  const [activeTimers, setActiveTimers] = useState<ActiveTimer[]>([])
   const squareLoadedAtRef = useRef(0)
   const historyLoadedAtRef = useRef(0)
   const initRef = useRef(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
 
   const fetchLeaderboard = useCallback(async () => {
     const supabase = createClient()
@@ -282,6 +296,42 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       setReady(true)
 
+      // Load active timers
+      const { data: timers } = await supabase
+        .from('active_timers')
+        .select('*')
+      if (timers) setActiveTimers(timers as ActiveTimer[])
+
+      // Subscribe to realtime changes on active_timers
+      const channel = supabase
+        .channel('active_timers_changes')
+        .on('postgres_changes',
+          { event: '*', schema: 'public', table: 'active_timers' },
+          (payload: { eventType: string; old: Record<string, unknown>; new: Record<string, unknown> }) => {
+            if (payload.eventType === 'DELETE') {
+              const old = payload.old as { user_id?: string }
+              if (old.user_id) {
+                setActiveTimers(prev => prev.filter(t => t.user_id !== old.user_id))
+              }
+            } else {
+              // INSERT or UPDATE
+              const row = payload.new as unknown as ActiveTimer
+              setActiveTimers(prev => {
+                const idx = prev.findIndex(t => t.user_id === row.user_id)
+                if (idx >= 0) {
+                  const next = [...prev]
+                  next[idx] = row
+                  return next
+                }
+                return [...prev, row]
+              })
+            }
+          }
+        )
+        .subscribe()
+
+      channelRef.current = channel
+
       // Auto-retry pending sessions
       const pending = getPendingSessions()
       setPendingCount(pending.length)
@@ -295,6 +345,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     intervalRef.current = setInterval(fetchLeaderboard, 30000)
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
+      if (channelRef.current) channelRef.current.unsubscribe()
     }
   }, [fetchLeaderboard, retryPendingSessions])
 
@@ -316,6 +367,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       setSquarePosts,
       profileHistory,
       loadProfileHistory: loadProfileHistoryFn,
+      activeTimers,
     }}>
       {children}
     </AppDataContext.Provider>
