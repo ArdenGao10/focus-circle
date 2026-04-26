@@ -11,25 +11,41 @@ export default function DailyTasks() {
   const [newTask, setNewTask] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showAIModal, setShowAIModal] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const { state: timerState, taskName, start: startTimer } = useTimer()
   const { ready, userId, profile, dailyTasks: tasks, setDailyTasks: setTasks } = useAppData()
+
+  function showError(msg: string) {
+    setErrorMsg(msg)
+    setTimeout(() => setErrorMsg(null), 3000)
+  }
 
   const goal = profile?.goal || ''
   const today = new Date().toISOString().split('T')[0]
 
   async function addTask(title: string) {
     if (!title.trim() || !userId) return
-    const supabase = createClient()
+    const trimmed = title.trim()
+    const tempId = `temp-${Date.now()}`
+    const optimistic = { id: tempId, title: trimmed, completed: false, date: today }
 
-    const { data } = await supabase.from('daily_tasks').insert({
+    setTasks(prev => [...prev, optimistic])
+    setNewTask('')
+    setShowSuggestions(false)
+
+    const supabase = createClient()
+    const { data, error } = await supabase.from('daily_tasks').insert({
       user_id: userId,
-      title: title.trim(),
+      title: trimmed,
       date: today,
     }).select('id, title, completed, date').single()
 
-    if (data) setTasks(prev => [...prev, data])
-    setNewTask('')
-    setShowSuggestions(false)
+    if (error || !data) {
+      setTasks(prev => prev.filter(t => t.id !== tempId))
+      showError('添加失败，请重试')
+    } else {
+      setTasks(prev => prev.map(t => t.id === tempId ? data : t))
+    }
   }
 
   async function addMultipleTasks(titles: string[]) {
@@ -41,15 +57,27 @@ export default function DailyTasks() {
   }
 
   async function toggleTask(id: string, completed: boolean) {
+    const newCompleted = !completed
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: newCompleted } : t))
+
     const supabase = createClient()
-    await supabase.from('daily_tasks').update({ completed: !completed }).eq('id', id)
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !t.completed } : t))
+    const { error } = await supabase.from('daily_tasks').update({ completed: newCompleted }).eq('id', id)
+    if (error) {
+      setTasks(prev => prev.map(t => t.id === id ? { ...t, completed } : t))
+      showError('标记失败，请重试')
+    }
   }
 
   async function deleteTask(id: string) {
-    const supabase = createClient()
-    await supabase.from('daily_tasks').delete().eq('id', id)
+    const removed = tasks.find(t => t.id === id)
     setTasks(prev => prev.filter(t => t.id !== id))
+
+    const supabase = createClient()
+    const { error } = await supabase.from('daily_tasks').delete().eq('id', id)
+    if (error && removed) {
+      setTasks(prev => [...prev, removed])
+      showError('删除失败，请重试')
+    }
   }
 
   function handleStartTask(title: string) {
@@ -74,6 +102,10 @@ export default function DailyTasks() {
   return (
     <div className="relative bg-paper rounded-2xl border border-cream p-4 shadow-sm paper-texture">
       <div className="absolute -top-1.5 left-8 w-20 h-2.5 bg-rose-light opacity-50 rounded-sm rotate-[-1deg]" />
+
+      {errorMsg && (
+        <div className="mb-2 text-xs text-rose-dark bg-rose-light/30 px-3 py-1.5 rounded-lg">{errorMsg}</div>
+      )}
 
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
