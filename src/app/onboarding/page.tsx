@@ -23,7 +23,6 @@ export default function OnboardingPage() {
   const [targetMinutes, setTargetMinutes] = useState(120)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const finalGoal = goal === 'custom' ? customGoal : goal
 
@@ -39,6 +38,7 @@ export default function OnboardingPage() {
     if (!nickname.trim() || !finalGoal.trim()) return
     setLoading(true)
 
+    const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
 
