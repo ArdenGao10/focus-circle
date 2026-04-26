@@ -27,13 +27,12 @@ function normalizeTaskName(taskName: string | null | undefined): string {
 }
 
 export default function TimerPage() {
-  const { state: localState, saving, taskName: localTaskName, start, pause, resume, end, lastSession } = useTimer()
-  const localElapsed = useLiveElapsed()
-  const { todaySessions, addSession, activeTimers, userId } = useAppData()
+  const { state, saving, taskName, start, pause, resume, end, lastSession } = useTimer()
+  const elapsed = useLiveElapsed()
+  const { todaySessions, addSession } = useAppData()
   const [localAdded, setLocalAdded] = useState<DisplaySession[]>([])
   const [showWelcome, setShowWelcome] = useState(false)
 
-  // Show welcome card for new users
   useEffect(() => {
     const welcomed = localStorage.getItem('focuscircle_welcomed')
     if (!welcomed) setShowWelcome(true)
@@ -58,37 +57,7 @@ export default function TimerPage() {
     })
   }, [lastSession, addSession])
 
-  // --- Cross-device sync via activeTimers ---
-  const myActiveTimer = activeTimers.find(t => t.user_id === userId)
-  const isLocalActive = localState !== 'idle'
-  // Remote = there's an active_timer but this device didn't start it
-  const isRemoteActive = !!myActiveTimer && !isLocalActive
-
-  // Tick for remote timer display
-  const [tick, setTick] = useState(0)
-  useEffect(() => {
-    const shouldTick = myActiveTimer?.state === 'running'
-    if (!shouldTick) return
-    const id = setInterval(() => setTick(v => v + 1), 1000)
-    return () => clearInterval(id)
-  }, [myActiveTimer?.state])
-  void tick
-
-  const remoteElapsed = useMemo(() => {
-    if (!myActiveTimer) return 0
-    let ms = myActiveTimer.accumulated_ms
-    if (myActiveTimer.state === 'running') {
-      ms += Date.now() - new Date(myActiveTimer.started_at).getTime()
-    }
-    return Math.max(0, Math.floor(ms / 1000))
-  }, [myActiveTimer, tick])
-
-  // Effective display state: local takes priority, fallback to remote
-  const effectiveState = isLocalActive ? localState : isRemoteActive ? myActiveTimer!.state : 'idle'
-  const effectiveElapsed = isLocalActive ? localElapsed : isRemoteActive ? remoteElapsed : 0
-  const effectiveTaskName = isLocalActive ? localTaskName : isRemoteActive ? (myActiveTimer!.task_text || null) : null
-
-  // --- Session display ---
+  // Merge cached sessions + locally added (dedup by id)
   const displaySessions = useMemo(() => {
     const fromCache: DisplaySession[] = todaySessions.map(s => ({
       id: s.id,
@@ -100,7 +69,6 @@ export default function TimerPage() {
     const newOnes = localAdded.filter(s => !cacheIds.has(s.id))
     const all = [...newOnes, ...fromCache]
 
-    // Merge personal focus entries
     const personal = all.filter(s => s.taskName === PERSONAL_FOCUS)
     const others = all.filter(s => s.taskName !== PERSONAL_FOCUS)
 
@@ -115,15 +83,12 @@ export default function TimerPage() {
   }, [todaySessions, localAdded])
 
   const sessionsTotal = displaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
-  const todayTotal = sessionsTotal + effectiveElapsed
-  const activeTaskName = normalizeTaskName(effectiveTaskName)
-
-  // Should we show the "今日记录" section? Yes if there are sessions OR an active timer
-  const showRecords = displaySessions.length > 0 || effectiveState !== 'idle'
+  const todayTotal = sessionsTotal + elapsed
+  const activeTaskName = normalizeTaskName(taskName)
+  const showRecords = displaySessions.length > 0 || state !== 'idle'
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
-      {/* Welcome card for new users */}
       {showWelcome && todaySessions.length === 0 && (
         <div className="relative bg-lavender-light/30 rounded-2xl border border-lavender-light p-4 shadow-sm">
           <button
@@ -159,19 +124,19 @@ export default function TimerPage() {
           </div>
 
           <p className={`text-sm mb-5 px-4 py-1 rounded-full border ${
-            effectiveState === 'idle'
+            state === 'idle'
               ? 'text-ink-light border-cream bg-butter-light'
-              : effectiveState === 'running'
+              : state === 'running'
               ? 'text-sage-dark border-sage-light bg-sage-light/30'
               : 'text-terracotta border-terracotta-light bg-terracotta-light/30'
           }`} style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
-            {effectiveState === 'idle' ? '准备开始' : effectiveState === 'running' ? (effectiveTaskName ? `${effectiveTaskName}` : '专注中...') : '已暂停'}
+            {state === 'idle' ? '准备开始' : state === 'running' ? (taskName ? `${taskName}` : '专注中...') : '已暂停'}
           </p>
 
-          <div className={`text-5xl font-bold tracking-widths mb-8 font-numeric transition-colors ${
-            effectiveState === 'running' ? 'text-ink' : effectiveState === 'paused' ? 'text-terracotta' : 'text-ink-light/40'
+          <div className={`text-5xl font-bold tracking-widest mb-8 font-numeric transition-colors ${
+            state === 'running' ? 'text-ink' : state === 'paused' ? 'text-terracotta' : 'text-ink-light/40'
           }`} style={{ letterSpacing: '0.15em' }}>
-            {formatTime(effectiveElapsed)}
+            {formatTime(elapsed)}
           </div>
 
           <div className="flex items-center gap-3 w-full mb-6">
@@ -181,27 +146,22 @@ export default function TimerPage() {
           </div>
 
           <div className="flex gap-3">
-            {effectiveState === 'idle' && (
+            {state === 'idle' && (
               <button onClick={() => start()} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
                 开始专注
               </button>
             )}
-            {isLocalActive && localState === 'running' && (
+            {state === 'running' && (
               <>
                 <button onClick={pause} className="px-6 py-2.5 border-2 border-ink-light/30 text-ink-light rounded-full text-sm font-medium hover:border-ink-light/50 active:scale-95 transition-all">暂停</button>
                 <button onClick={end} disabled={saving} className="px-6 py-2.5 bg-rose-dark text-paper rounded-full text-sm font-medium shadow-sm disabled:opacity-50 active:scale-95 transition-all">结束</button>
               </>
             )}
-            {isLocalActive && localState === 'paused' && (
+            {state === 'paused' && (
               <>
                 <button onClick={resume} className="px-6 py-2.5 bg-sage text-paper rounded-full text-sm font-medium shadow-sm active:scale-95 transition-all">继续</button>
                 <button onClick={end} disabled={saving} className="px-6 py-2.5 border-2 border-ink-light/30 text-ink-light rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-all">{saving ? '保存中...' : '结束'}</button>
               </>
-            )}
-            {isRemoteActive && (
-              <span className="px-6 py-2.5 text-sage-dark text-sm font-medium animate-pulse" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
-                在其他设备计时中...
-              </span>
             )}
           </div>
         </div>
@@ -217,14 +177,14 @@ export default function TimerPage() {
           </div>
           <div className="space-y-2">
             {/* Live entry for active timer */}
-            {effectiveState !== 'idle' && (
+            {state !== 'idle' && (
               <div className="flex items-center gap-3 py-1.5">
                 <div className="w-2 h-2 rounded-full bg-sage shrink-0 animate-pulse" />
                 <span className="text-sm text-sage-dark flex-1 truncate font-medium">{activeTaskName}</span>
                 <div className="w-14 h-1.5 bg-cream rounded-full overflow-hidden shrink-0">
-                  <div className="h-full bg-sage rounded-full transition-all" style={{ width: `${Math.min((effectiveElapsed / 3600) * 100, 100)}%` }} />
+                  <div className="h-full bg-sage rounded-full transition-all" style={{ width: `${Math.min((elapsed / 3600) * 100, 100)}%` }} />
                 </div>
-                <span className="text-xs font-medium text-sage-dark shrink-0 font-numeric w-20 text-right">{formatTime(effectiveElapsed)}</span>
+                <span className="text-xs font-medium text-sage-dark shrink-0 font-numeric w-20 text-right">{formatTime(elapsed)}</span>
               </div>
             )}
             {displaySessions.map((s) => (
