@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useAppData } from '@/components/AppDataContext'
+import { useTimer, useLiveElapsed } from '@/components/TimerContext'
 import { Branch, Sprig } from '@/components/Botanicals'
 
 function formatDuration(seconds: number): string {
@@ -39,7 +40,9 @@ function ProfileSkeleton() {
 }
 
 export default function ProfilePage() {
-  const { ready, userId, profile, dailyTasks, pendingCount, retryPendingSessions, profileHistory, loadProfileHistory } = useAppData()
+  const { profile, dailyTasks, pendingCount, retryPendingSessions, profileHistory, loadProfileHistory } = useAppData()
+  const { state: timerState } = useTimer()
+  const liveElapsed = useLiveElapsed()
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const router = useRouter()
 
@@ -59,14 +62,22 @@ export default function ProfilePage() {
   const allSessions = profileHistory || []
   const historyLoaded = profileHistory !== null
 
+  const isTimerActive = timerState !== 'idle'
+  const today = new Date().toISOString().split('T')[0]
+
   const targetMins = profile.target_minutes || 120
-  const totalSeconds = allSessions.reduce((sum, s) => sum + s.duration_seconds, 0)
+  const baseTotal = allSessions.reduce((sum, s) => sum + s.duration_seconds, 0)
+  const totalSeconds = baseTotal + (isTimerActive ? liveElapsed : 0)
   const totalDays = new Set(allSessions.map(s => s.date)).size
 
   const sessionsByDate = allSessions.reduce<Record<string, number>>((acc, s) => {
     acc[s.date] = (acc[s.date] || 0) + s.duration_seconds
     return acc
   }, {})
+  // Add live elapsed to today's entry
+  if (isTimerActive) {
+    sessionsByDate[today] = (sessionsByDate[today] || 0) + liveElapsed
+  }
   const dateList = Object.keys(sessionsByDate).sort((a, b) => b.localeCompare(a))
   const dateTasks = selectedDate ? dailyTasks.filter(t => t.date === selectedDate) : []
 
@@ -97,8 +108,8 @@ export default function ProfilePage() {
           <div className="text-xs text-ink-light mt-0.5">打卡天数</div>
         </div>
         <div className="bg-paper rounded-xl border border-cream p-3 text-center paper-texture">
-          <div className="text-2xl font-bold text-terracotta">
-            {historyLoaded ? (totalSeconds >= 3600 ? `${Math.floor(totalSeconds / 3600)}h` : `${Math.floor(totalSeconds / 60)}m`) : '–'}
+          <div className="text-lg font-bold text-terracotta font-numeric">
+            {historyLoaded ? formatDuration(totalSeconds) : '–'}
           </div>
           <div className="text-xs text-ink-light mt-0.5">累计时长</div>
         </div>
