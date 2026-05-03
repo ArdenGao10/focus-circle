@@ -1,117 +1,33 @@
 'use client'
 
-import { useState, useEffect, useMemo, type ReactNode } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useTimer, useLiveElapsed } from '@/components/TimerContext'
 import { useAppData } from '@/components/AppDataContext'
 import DailyTasks from '@/components/DailyTasks'
-import { Leaf, Flower, Branch } from '@/components/Botanicals'
 
 const PERSONAL_FOCUS = '个人专注'
 
 type TimerVisualState = 'idle' | 'running' | 'paused'
 
+function pad2(n: number) { return n.toString().padStart(2, '0') }
+
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  return `${pad2(h)}:${pad2(m)}:${pad2(s)}`
 }
 
-function formatRingTime(seconds: number): string {
-  const totalMinutes = Math.floor(seconds / 60)
+function formatAuraTime(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
-  if (totalMinutes >= 60) {
-    const h = Math.floor(totalMinutes / 60)
-    const m = totalMinutes % 60
-    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
-  }
-  return `${totalMinutes.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  if (h > 0) return `${h}:${pad2(m)}:${pad2(s)}`
+  return `${pad2(m)}:${pad2(s)}`
 }
 
-function HaloRings({
-  state,
-  children,
-}: {
-  state: TimerVisualState
-  children: ReactNode
-}) {
-  const containerOpacity = state === 'running' ? 1 : state === 'paused' ? 0.55 : 0.85
-  const filter = state === 'paused' ? 'saturate(0.5)' : 'saturate(1)'
-  const playState = state === 'paused' ? 'paused' : 'running'
-  const speedMul = state === 'running' ? 1 : 1.4
-  const ringOrigin: React.CSSProperties = { transformOrigin: '50px 50px', animationPlayState: playState }
-
-  return (
-    <div
-      className="relative flex items-center justify-center"
-      style={{ width: 'clamp(180px, 50vw, 240px)', height: 'clamp(180px, 50vw, 240px)' }}
-    >
-      <svg
-        viewBox="0 0 100 100"
-        className="absolute inset-0 w-full h-full"
-        style={{
-          opacity: containerOpacity,
-          filter,
-          transition: 'opacity 0.6s ease, filter 0.6s ease',
-        }}
-      >
-        <defs>
-          <linearGradient id="halo-grad-a" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="var(--sage-dark)" />
-            <stop offset="100%" stopColor="var(--sage-light)" />
-          </linearGradient>
-          <radialGradient id="halo-grad-glow" cx="50%" cy="50%" r="50%">
-            <stop offset="55%" stopColor="var(--sage)" stopOpacity="0" />
-            <stop offset="100%" stopColor="var(--sage)" stopOpacity="0.35" />
-          </radialGradient>
-        </defs>
-
-        {/* Outermost soft glow halo */}
-        <circle
-          cx="50" cy="50" r="48"
-          fill="url(#halo-grad-glow)" stroke="none"
-          style={{
-            ...ringOrigin,
-            animation: `halo-glow ${8 * speedMul}s ease-in-out infinite`,
-          }}
-        />
-
-        {/* Outer gradient ring — clockwise rotate + breathe */}
-        <circle
-          cx="50" cy="50" r="46"
-          fill="none" stroke="url(#halo-grad-a)" strokeWidth="0.8"
-          style={{
-            ...ringOrigin,
-            animation: `halo-outer ${7 * speedMul}s ease-in-out infinite`,
-          }}
-        />
-
-        {/* Middle dashed ring — counter-rotate (visible dash motion) */}
-        <circle
-          cx="50" cy="50" r="39"
-          fill="none" stroke="var(--sage-dark)" strokeWidth="1"
-          strokeDasharray="1.5 3" strokeLinecap="round" opacity="0.7"
-          style={{
-            ...ringOrigin,
-            animation: `halo-middle ${5.5 * speedMul}s ease-in-out infinite`,
-          }}
-        />
-
-        {/* Inner thin ring — gentle breath */}
-        <circle
-          cx="50" cy="50" r="32"
-          fill="none" stroke="var(--sage)" strokeWidth="0.5" opacity="0.6"
-          style={{
-            ...ringOrigin,
-            animation: `halo-inner ${4 * speedMul}s ease-in-out infinite`,
-          }}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        {children}
-      </div>
-    </div>
-  )
+function formatAuraDate(d: Date): string {
+  return `${d.getMonth() + 1}月${d.getDate()}日`
 }
 
 interface DisplaySession {
@@ -125,19 +41,57 @@ function normalizeTaskName(taskName: string | null | undefined): string {
   return taskName?.trim() || PERSONAL_FOCUS
 }
 
+/* ─────────────────────────────────────────────────────────────
+   Aura halo — three crossfaded radial-gradient layers, breathing.
+   No ring, no border, no outer shadow. Just light.
+   ───────────────────────────────────────────────────────────── */
+function AuraHalo({ state, children }: { state: TimerVisualState; children: React.ReactNode }) {
+  const layer = (gradient: string, visible: boolean): React.CSSProperties => ({
+    position: 'absolute',
+    inset: 0,
+    borderRadius: '50%',
+    background: gradient,
+    filter: 'blur(0.5px)',
+    opacity: visible ? 1 : 0,
+    transition: 'opacity 0.6s ease',
+  })
+
+  return (
+    <div
+      className="relative flex items-center justify-center mx-auto"
+      style={{ width: 'min(400px, 70vw)', height: 'min(400px, 70vw)' }}
+    >
+      <div className="absolute inset-0 aura-breathe">
+        <div style={layer(
+          'radial-gradient(circle at center, var(--aura-green-soft) 0%, transparent 70%)',
+          state === 'idle',
+        )} />
+        <div style={layer(
+          'radial-gradient(circle at center, var(--aura-green) 0%, transparent 65%)',
+          state === 'running',
+        )} />
+        <div style={layer(
+          'radial-gradient(circle at center, var(--aura-cool) 0%, transparent 70%)',
+          state === 'paused',
+        )} />
+      </div>
+      <div className="relative z-10 flex items-center justify-center">
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export default function TimerPage() {
   const { state, saving, taskName, start, pause, resume, end, lastSession } = useTimer()
   const elapsed = useLiveElapsed()
-  const { todaySessions, addSession } = useAppData()
+  const { todaySessions, addSession, profileHistory, loadProfileHistory } = useAppData()
   const [localAdded, setLocalAdded] = useState<DisplaySession[]>([])
-  const [showWelcome, setShowWelcome] = useState(false)
 
-  useEffect(() => {
-    const welcomed = localStorage.getItem('focuscircle_welcomed')
-    if (!welcomed) setShowWelcome(true)
-  }, [])
+  // Trigger profile-history load so we can compute the streak in the footer.
+  useEffect(() => { loadProfileHistory() }, [loadProfileHistory])
 
-  // When a session ends, add to local + cache
+  // When a session ends, push it into local + cache
   useEffect(() => {
     if (!lastSession) return
     const normalizedName = normalizeTaskName(lastSession.taskName)
@@ -156,7 +110,6 @@ export default function TimerPage() {
     })
   }, [lastSession, addSession])
 
-  // Merge cached sessions + locally added (dedup by id)
   const displaySessions = useMemo(() => {
     const fromCache: DisplaySession[] = todaySessions.map(s => ({
       id: s.id,
@@ -170,9 +123,7 @@ export default function TimerPage() {
 
     const personal = all.filter(s => s.taskName === PERSONAL_FOCUS)
     const others = all.filter(s => s.taskName !== PERSONAL_FOCUS)
-
     if (personal.length <= 1) return all
-
     const merged = personal.reduce((acc, cur) => ({
       ...acc,
       duration_seconds: acc.duration_seconds + cur.duration_seconds,
@@ -183,158 +134,243 @@ export default function TimerPage() {
 
   const activeTaskName = normalizeTaskName(taskName)
   const isActive = state !== 'idle'
-  const ringTaskLabel = isActive ? (taskName?.trim() || '自由专注') : ''
-
-  // Check if the active task already has a historical row
-  const activeHasHistory = isActive && displaySessions.some(s => s.taskName === activeTaskName)
+  const hasNamedTask = isActive && activeTaskName !== PERSONAL_FOCUS
 
   const sessionsTotal = displaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
 
-  // Cumulative total refreshes every 5s
+  // Cumulative refresh every 5s (cheap timer for the footer total)
   const [totalElapsed, setTotalElapsed] = useState(0)
   useEffect(() => {
     if (!isActive) { setTotalElapsed(0); return }
     setTotalElapsed(elapsed)
     const interval = setInterval(() => setTotalElapsed(prev => prev + 5), 5000)
     return () => clearInterval(interval)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isActive])
-  useEffect(() => { if (!isActive) setTotalElapsed(0) }, [isActive])
 
   const todayTotal = sessionsTotal + (isActive ? totalElapsed : 0)
   const showRecords = displaySessions.length > 0 || isActive
 
+  // Streak — count consecutive days back from today using profileHistory.
+  const streakDays = useMemo(() => {
+    if (!profileHistory || profileHistory.length === 0) return 0
+    const days = new Set(profileHistory.map(h => h.date))
+    let count = 0
+    const cursor = new Date()
+    while (days.has(cursor.toISOString().split('T')[0])) {
+      count += 1
+      cursor.setDate(cursor.getDate() - 1)
+    }
+    return count
+  }, [profileHistory])
+
+  const today = new Date()
+
+  // Primary action label per state — text, not button
+  const primaryLabel = state === 'idle' ? 'BEGIN' : state === 'running' ? 'PAUSE' : 'RESUME'
+  const onPrimary = state === 'idle' ? () => start() : state === 'running' ? pause : resume
+
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
-      {showWelcome && todaySessions.length === 0 && (
-        <div className="relative bg-lavender-light/30 rounded-2xl border border-lavender-light p-4 shadow-sm">
-          <button
-            onClick={() => { setShowWelcome(false); localStorage.setItem('focuscircle_welcomed', 'true') }}
-            className="absolute top-3 right-3 text-ink-light/40 hover:text-ink-light transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <div className="flex items-start gap-3">
-            <span className="text-xl shrink-0 mt-0.5">🌸</span>
-            <div>
-              <p className="text-sm font-semibold text-ink mb-1" style={{ fontFamily: 'var(--font-display)' }}>欢迎来到专注圈！</p>
-              <p className="text-xs text-ink-light leading-relaxed">
-                试试先在下面设一个今天要做的事，然后点「开始专注」，用正计时记录你真实的投入。不设倒计时、不设打卡天数，你学多久算多久。
-              </p>
-            </div>
-          </div>
+    <div
+      className="relative min-h-full"
+      style={{ background: 'var(--aura-bg-primary)', color: 'var(--aura-text-primary)' }}
+    >
+      {/* ─── Hero: ~one screen, generous whitespace ─── */}
+      <section className="flex flex-col items-center px-6 pt-10 pb-24">
+        {/* 1. Top wordmark */}
+        <div
+          style={{
+            fontFamily: 'var(--aura-font-mono)',
+            fontSize: 11,
+            letterSpacing: '0.2em',
+            color: 'var(--aura-text-muted)',
+          }}
+        >
+          FOCUS.CIRCLE
         </div>
-      )}
 
-      {/* Timer card */}
-      <div className="relative bg-paper rounded-2xl border border-cream shadow-sm overflow-hidden paper-texture">
-        <Leaf className="absolute top-3 right-4 w-8 h-12 text-sage-dark animate-sway" />
-        <Flower className="absolute top-6 left-5 w-8 h-8 text-rose" style={{ animationDelay: '1s' }} />
-        <Branch className="absolute bottom-0 left-0 w-32 h-10 text-sage-dark opacity-60" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-3 bg-sage-light opacity-50 -translate-y-1 rounded-b-sm" />
+        {/* 2. Big serif title */}
+        <h1
+          className="mt-12 text-center"
+          style={{
+            fontFamily: 'var(--aura-font-serif)',
+            fontSize: 'clamp(40px, 12vw, 56px)',
+            fontWeight: 400,
+            lineHeight: 1,
+            color: 'var(--aura-text-primary)',
+          }}
+        >
+          Focus.
+        </h1>
 
-        <div className="flex flex-col items-center pt-10 pb-8 px-6">
-          <div className="text-xs text-ink-light tracking-widest mb-2" style={{ fontFamily: 'var(--font-display)' }}>
-            {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
-          </div>
-
-          <p
-            className={`text-sm mb-5 min-h-[1.25rem] truncate max-w-[18rem] text-center transition-colors ${
-              state === 'running' ? 'text-sage-dark' : state === 'paused' ? 'text-terracotta' : 'text-ink-light'
-            }`}
-            style={{ fontFamily: 'var(--font-display)' }}
-          >
-            {ringTaskLabel}
-          </p>
-
-          <HaloRings state={state}>
-            <div
-              className={`font-bold font-numeric transition-colors ${
-                state === 'running' ? 'text-ink' : state === 'paused' ? 'text-terracotta' : 'text-ink-light/40'
-              }`}
-              style={{ fontSize: 'clamp(1.875rem, 7vw, 2.5rem)', letterSpacing: '0.08em' }}
-            >
-              {formatRingTime(elapsed)}
-            </div>
-          </HaloRings>
-
-          <div className="flex items-center gap-3 w-full mt-7 mb-5">
-            <div className="flex-1 h-px bg-cream" />
-            <Flower className="w-4 h-4 text-rose-dark opacity-40" />
-            <div className="flex-1 h-px bg-cream" />
-          </div>
-
-          <div className="flex gap-3 items-center">
-            {state === 'idle' && (
-              <button onClick={() => start()} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: 'var(--font-display)' }}>
-                开始专注
-              </button>
-            )}
-            {state === 'running' && (
-              <>
-                <button onClick={pause} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: 'var(--font-display)' }}>
-                  暂停
-                </button>
-                <button onClick={end} disabled={saving} className="px-5 py-2.5 border border-ink-light/30 text-ink-light rounded-full text-sm font-medium hover:border-ink-light/50 active:scale-95 transition-all disabled:opacity-50">
-                  {saving ? '保存中...' : '结束'}
-                </button>
-              </>
-            )}
-            {state === 'paused' && (
-              <>
-                <button onClick={resume} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: 'var(--font-display)' }}>
-                  继续
-                </button>
-                <button onClick={end} disabled={saving} className="px-5 py-2.5 border border-ink-light/30 text-ink-light rounded-full text-sm font-medium hover:border-ink-light/50 active:scale-95 transition-all disabled:opacity-50">
-                  {saving ? '保存中...' : '结束'}
-                </button>
-              </>
-            )}
-          </div>
+        {/* 3. Date · daily mantra */}
+        <div
+          className="mt-3 text-center"
+          style={{
+            fontFamily: 'var(--aura-font-serif)',
+            fontStyle: 'italic',
+            fontSize: 14,
+            color: 'var(--aura-text-secondary)',
+          }}
+        >
+          {formatAuraDate(today)} · 静而后能定
         </div>
-      </div>
 
-      {/* Today's session records */}
-      {showRecords && (
-        <div className="relative bg-paper rounded-2xl border border-cream p-4 shadow-sm paper-texture">
-          <div className="absolute top-0 right-8 w-16 h-3 bg-lavender-light opacity-50 -translate-y-1 rounded-b-sm rotate-1" />
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>今日记录</span>
-            <span className="text-xs px-2.5 py-0.5 rounded-full bg-sage-light/40 text-sage-dark font-numeric">共 {formatTime(todayTotal)}</span>
-          </div>
-          <div className="space-y-2">
-            {/* Live-only row: only when active task has no historical session */}
-            {isActive && !activeHasHistory && (
-              <div className="flex items-center gap-3 py-1.5">
-                <div className="w-2 h-2 rounded-full bg-sage shrink-0 animate-pulse" />
-                <span className="text-sm text-sage-dark flex-1 truncate font-medium">{activeTaskName}</span>
-                <div className="w-14 h-1.5 bg-cream rounded-full overflow-hidden shrink-0">
-                  <div className="h-full bg-sage rounded-full transition-all" style={{ width: `${Math.min((elapsed / 3600) * 100, 100)}%` }} />
-                </div>
-                <span className="text-xs font-medium text-sage-dark shrink-0 font-numeric w-20 text-right">{formatTime(elapsed)}</span>
+        {/* 4. The halo + time */}
+        <div className="mt-12">
+          <AuraHalo state={state}>
+            <div className="flex flex-col items-center">
+              <div
+                style={{
+                  fontFamily: 'var(--aura-font-serif)',
+                  fontSize: 'clamp(56px, 16vw, 88px)',
+                  fontWeight: 300,
+                  lineHeight: 1,
+                  color: 'var(--aura-text-primary)',
+                  fontVariantNumeric: 'tabular-nums lining-nums',
+                }}
+              >
+                {formatAuraTime(elapsed)}
               </div>
-            )}
+
+              {hasNamedTask && (
+                <div
+                  className="mt-6 flex items-center gap-2"
+                  style={{
+                    fontFamily: 'var(--aura-font-sans)',
+                    fontSize: 14,
+                    color: 'var(--aura-text-secondary)',
+                  }}
+                >
+                  <span style={{ color: 'rgb(111, 169, 137)' }}>•</span>
+                  <span className="truncate max-w-[16rem]">{activeTaskName}</span>
+                </div>
+              )}
+            </div>
+          </AuraHalo>
+        </div>
+
+        {/* 5. Operation area — text-only with hover-extend underline */}
+        <div className="mt-20 flex flex-col items-center">
+          <button
+            onClick={onPrimary}
+            className="aura-text-action group"
+            style={{
+              fontFamily: 'var(--aura-font-mono)',
+              fontSize: 14,
+              letterSpacing: '0.3em',
+              color: 'var(--aura-text-primary)',
+              background: 'transparent',
+              border: 'none',
+              padding: '4px 0',
+              cursor: 'pointer',
+            }}
+          >
+            {primaryLabel}
+            <span
+              className="block mx-auto mt-2"
+              style={{
+                height: 1,
+                background: 'var(--aura-text-primary)',
+                transition: 'width 0.3s ease',
+              }}
+            />
+          </button>
+
+          {/* Discreet end link — only visible during a session */}
+          {isActive && (
+            <button
+              onClick={end}
+              disabled={saving}
+              className="mt-6"
+              style={{
+                fontFamily: 'var(--aura-font-mono)',
+                fontSize: 11,
+                letterSpacing: '0.25em',
+                color: 'var(--aura-text-muted)',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {saving ? 'SAVING…' : 'END SESSION'}
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* ─── Today's records (kept functional, neutralized look) ─── */}
+      {showRecords && (
+        <section className="px-6 pb-10 max-w-md mx-auto w-full">
+          <div
+            className="flex items-center justify-between mb-4"
+            style={{ fontFamily: 'var(--aura-font-mono)', fontSize: 11, letterSpacing: '0.2em', color: 'var(--aura-text-muted)' }}
+          >
+            <span>TODAY · 今日记录</span>
+            <span style={{ fontVariantNumeric: 'tabular-nums lining-nums' }}>{formatTime(todayTotal)}</span>
+          </div>
+          <div className="space-y-3">
             {displaySessions.map((s) => {
               const isLive = isActive && s.taskName === activeTaskName
               const totalSec = isLive ? s.duration_seconds + elapsed : s.duration_seconds
               return (
-                <div key={s.id} className="flex items-center gap-3 py-1.5">
-                  <div className={`w-2 h-2 rounded-full bg-sage shrink-0 ${isLive ? 'animate-pulse' : ''}`} />
-                  <span className={`text-sm flex-1 truncate ${isLive ? 'text-sage-dark font-medium' : 'text-ink'}`}>{s.taskName}</span>
-                  <div className="w-14 h-1.5 bg-cream rounded-full overflow-hidden shrink-0">
-                    <div className="h-full bg-sage rounded-full transition-all" style={{ width: `${Math.min((totalSec / 3600) * 100, 100)}%` }} />
-                  </div>
-                  <span className={`text-xs font-medium shrink-0 font-numeric w-20 text-right ${isLive ? 'text-sage-dark' : 'text-ink-light'}`}>{formatTime(totalSec)}</span>
+                <div key={s.id} className="flex items-center gap-3 py-1">
+                  <span
+                    style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: isLive ? 'rgb(111, 169, 137)' : 'var(--aura-text-muted)',
+                      flexShrink: 0,
+                    }}
+                  />
+                  <span
+                    className="flex-1 truncate"
+                    style={{
+                      fontFamily: 'var(--aura-font-sans)',
+                      fontSize: 14,
+                      color: isLive ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                    }}
+                  >
+                    {s.taskName}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--aura-font-mono)',
+                      fontSize: 12,
+                      color: 'var(--aura-text-secondary)',
+                      fontVariantNumeric: 'tabular-nums lining-nums',
+                    }}
+                  >
+                    {formatTime(totalSec)}
+                  </span>
                 </div>
               )
             })}
           </div>
-        </div>
+        </section>
       )}
 
-      <DailyTasks />
+      <section className="px-6 pb-32 max-w-md mx-auto w-full">
+        <DailyTasks />
+      </section>
+
+      {/* ─── Footer status bar — fixed above the bottom nav ─── */}
+      <div
+        className="fixed left-0 right-0 flex justify-center pointer-events-none"
+        style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div
+          className="px-4 py-2"
+          style={{
+            fontFamily: 'var(--aura-font-mono)',
+            fontSize: 10,
+            letterSpacing: '0.15em',
+            color: 'var(--aura-text-muted)',
+            fontVariantNumeric: 'tabular-nums lining-nums',
+          }}
+        >
+          FOCUS.CIRCLE // {formatTime(todayTotal)} TODAY{streakDays > 0 ? ` // ${streakDays} DAYS STREAK` : ''}
+        </div>
+      </div>
     </div>
   )
 }

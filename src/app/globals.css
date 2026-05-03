@@ -31,6 +31,36 @@
   --font-display: var(--font-fraunces), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Songti SC', 'Noto Serif SC', Georgia, serif;
   --font-script: var(--font-caveat), 'Bradley Hand', 'Apple Chancery', cursive;
   --font-body: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
+
+  /* ─────────────────────────────────────────────────────────────
+     Aura Focus / 灵气流动 — design tokens (timer page first;
+     reusable across pages once approved).
+     ───────────────────────────────────────────────────────────── */
+
+  /* Surfaces */
+  --aura-bg-primary: #FBFBFB;
+  --aura-bg-elevated: #FFFFFF;
+
+  /* Text */
+  --aura-text-primary: #1A1A1A;
+  --aura-text-secondary: #6B6B6B;
+  --aura-text-muted: #A0A0A0;
+
+  /* Aura colors — always used as gradients with transparency, never solid */
+  --aura-green: rgba(111, 169, 137, 0.6);
+  --aura-green-soft: rgba(168, 213, 186, 0.3);
+  --aura-warm: rgba(244, 196, 161, 0.5);
+  --aura-cool: rgba(197, 181, 221, 0.4);
+
+  /* Typography stacks for the new system */
+  --aura-font-serif: var(--font-cormorant), 'LXGW WenKai', '霞鹜文楷', 'Source Han Serif SC', 'Noto Serif SC', 'Songti SC', Georgia, serif;
+  --aura-font-sans: var(--font-inter), 'PingFang SC', 'Hiragino Sans GB', 'Source Han Sans SC', system-ui, sans-serif;
+  --aura-font-mono: var(--font-jetbrains-mono), 'JetBrains Mono', 'DM Mono', 'SF Mono', Menlo, monospace;
+
+  /* Radii & spacing */
+  --aura-radius-pill: 999px;
+  --aura-radius-card: 24px;
+  --aura-space-section: 64px;
 }
 
 @theme inline {
@@ -207,6 +237,28 @@ body {
 .animate-petal-fall {
   animation: petal-fall linear infinite;
   will-change: transform, opacity;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Aura — breathe animation (only animation in v0; rotation
+   layer arrives in next pass once layout is approved).
+   ───────────────────────────────────────────────────────────── */
+@keyframes aura-breathe {
+  0%, 100% { transform: scale(1);    opacity: 0.85; }
+  50%      { transform: scale(1.05); opacity: 1;    }
+}
+.aura-breathe {
+  animation: aura-breathe 4s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+
+/* Text-action hover: underline expands 60 → 100px. */
+.aura-text-action > span {
+  width: 60px;
+}
+.aura-text-action:hover > span,
+.aura-text-action:focus-visible > span {
+  width: 100px;
 }
 
 /* Custom scrollbar */

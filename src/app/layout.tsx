@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { Fraunces, Caveat } from "next/font/google";
+import { Fraunces, Caveat, Cormorant_Garamond, Inter, JetBrains_Mono } from "next/font/google";
 import PWARegister from "@/components/PWARegister";
 import "./globals.css";
 
@@ -36,6 +36,29 @@ const caveat = Caveat({
   display: "swap",
 });
 
+// Aura design system fonts
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  style: ["normal", "italic"],
+  variable: "--font-cormorant",
+  display: "swap",
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["300", "400", "500"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "专注圈 - 学习打卡",
   description: "和志同道合的人一起学习打卡",
@@ -55,7 +78,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh-CN" className={`h-full ${numericFont.variable} ${fraunces.variable} ${caveat.variable}`}>
+    <html lang="zh-CN" className={`h-full ${numericFont.variable} ${fraunces.variable} ${caveat.variable} ${cormorant.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
       <body className="h-full antialiased">
         <PWARegister />
         {children}
