@@ -27,7 +27,7 @@ export default function DailyTasks() {
     if (!title.trim() || !userId) return
     const trimmed = title.trim()
     const tempId = `temp-${Date.now()}`
-    const optimistic = { id: tempId, title: trimmed, completed: false, date: today }
+    const optimistic = { id: tempId, title: trimmed, completed: false, date: today, source: 'manual' as const }
 
     setTasks(prev => [...prev, optimistic])
     setNewTask('')
@@ -38,7 +38,8 @@ export default function DailyTasks() {
       user_id: userId,
       title: trimmed,
       date: today,
-    }).select('id, title, completed, date').single()
+      source: 'manual',
+    }).select('id, title, completed, date, source').single()
 
     if (error || !data) {
       setTasks(prev => prev.filter(t => t.id !== tempId))
@@ -51,8 +52,8 @@ export default function DailyTasks() {
   async function addMultipleTasks(titles: string[]) {
     if (!userId) return
     const supabase = createClient()
-    const rows = titles.map(t => ({ user_id: userId, title: t.trim(), date: today }))
-    const { data } = await supabase.from('daily_tasks').insert(rows).select('id, title, completed, date')
+    const rows = titles.map(t => ({ user_id: userId, title: t.trim(), date: today, source: 'ai_suggested' as const }))
+    const { data } = await supabase.from('daily_tasks').insert(rows).select('id, title, completed, date, source')
     if (data) setTasks(prev => [...prev, ...data])
   }
 
@@ -80,8 +81,8 @@ export default function DailyTasks() {
     }
   }
 
-  function handleStartTask(title: string) {
-    startTimer(title)
+  function handleStartTask(title: string, source: 'ai_suggested' | 'manual') {
+    startTimer(title, source)
   }
 
   const isTimerBusy = timerState !== 'idle'
@@ -168,7 +169,7 @@ export default function DailyTasks() {
               </span>
 
               {!task.completed && !isActiveTask && (
-                <button onClick={() => handleStartTask(task.title)} disabled={isTimerBusy} className="opacity-0 group-hover:opacity-100 disabled:opacity-30 text-sage hover:text-sage-dark transition-all active:scale-90 p-0.5" title="开始计时">
+                <button onClick={() => handleStartTask(task.title, task.source)} disabled={isTimerBusy} className="opacity-0 group-hover:opacity-100 disabled:opacity-30 text-sage hover:text-sage-dark transition-all active:scale-90 p-0.5" title="开始计时">
                   <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                     <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

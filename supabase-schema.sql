@@ -144,3 +144,45 @@ create policy "Users can encourage others' posts"
 
 -- 加入 realtime publication（让发帖人能实时收到鼓励事件）
 alter publication supabase_realtime add table public.post_encouragements;
+
+-- 7. focus source 埋点（为将来计算"AI 任务实际执行率"留数据）
+-- 历史行无值，默认 'manual'；写入时由应用层显式传值。
+alter table public.sessions
+  add column if not exists source text not null default 'manual'
+  check (source in ('ai_suggested', 'manual', 'free'));
+
+alter table public.daily_tasks
+  add column if not exists source text not null default 'manual'
+  check (source in ('ai_suggested', 'manual'));
+
+-- active_timers 是瞬时表（session 结束即删），无历史回填问题，默认 'free'
+alter table public.active_timers
+  add column if not exists task_source text not null default 'free'
+  check (task_source in ('ai_suggested', 'manual', 'free'));
+
+-- 周/月统计走 user_id + created_at 范围扫描
+create index if not exists sessions_user_created_at_idx
+  on public.sessions(user_id, created_at desc);
+
+-- ──────────────────────────────────────────────────────────
+-- 查询示例：过去 7 天 AI 任务实际执行率
+-- 两种口径任选：
+
+-- (A) daily_tasks 维度的完成率（推荐：直接表达"AI 推荐了 N 个，做完了 M 个"）
+-- select
+--   count(*) filter (where completed) as ai_completed,
+--   count(*)                          as ai_total,
+--   round(100.0 * count(*) filter (where completed) / nullif(count(*), 0), 1) as completion_rate_pct
+-- from public.daily_tasks
+-- where user_id = auth.uid()
+--   and source  = 'ai_suggested'
+--   and date   >= current_date - interval '7 days';
+
+-- (B) sessions 维度的产出占比（"专注时长里 AI 任务占多少"）
+-- select
+--   sum(duration_seconds) filter (where source = 'ai_suggested') / 60 as ai_minutes,
+--   sum(duration_seconds)                                          / 60 as total_minutes,
+--   round(100.0 * sum(duration_seconds) filter (where source = 'ai_suggested') / nullif(sum(duration_seconds), 0), 1) as ai_share_pct
+-- from public.sessions
+-- where user_id     = auth.uid()
+--   and created_at >= now() - interval '7 days';

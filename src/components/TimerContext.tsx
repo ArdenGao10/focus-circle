@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useRef, useCallback, useMemo, useEffect, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useAppData, type ActiveTimer } from './AppDataContext'
+import { useAppData, type ActiveTimer, type FocusSource } from './AppDataContext'
 
 const PERSONAL_FOCUS = '个人专注'
 const ZOMBIE_THRESHOLD_MS = 12 * 60 * 60 * 1000
@@ -30,7 +30,9 @@ interface TimerContextType {
   lastSession: SessionRecord | null
   zombie: ZombieInfo | null
   getElapsed: () => number
-  start: (taskName?: string) => void
+  /** Source defaults to 'free' when omitted to avoid silent crashes; callers
+   *  with a real task should pass 'manual' or 'ai_suggested' explicitly. */
+  start: (taskName?: string, source?: FocusSource) => void
   pause: () => void
   resume: () => void
   end: () => Promise<void>
@@ -75,7 +77,7 @@ function computeElapsed(timer: ActiveTimer): number {
 async function syncActiveTimer(
   userId: string,
   action: 'upsert' | 'delete',
-  payload?: { state: 'running' | 'paused'; started_at: string; accumulated_ms: number; task_text: string | null },
+  payload?: { state: 'running' | 'paused'; started_at: string; accumulated_ms: number; task_text: string | null; task_source: FocusSource },
 ) {
   try {
     const sb = createClient()
@@ -88,6 +90,7 @@ async function syncActiveTimer(
         started_at: payload.started_at,
         accumulated_ms: payload.accumulated_ms,
         task_text: payload.task_text,
+        task_source: payload.task_source,
         updated_at: new Date().toISOString(),
       })
     }
@@ -138,7 +141,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   // --- Timer actions (write to server, Realtime updates all devices) ---
 
-  const start = useCallback((name?: string) => {
+  const start = useCallback((name?: string, source: FocusSource = 'free') => {
     if (!userId) return
     setLastSession(null)
     const now = new Date()
@@ -147,6 +150,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       started_at: now.toISOString(),
       accumulated_ms: 0,
       task_text: name || null,
+      task_source: source,
     })
   }, [userId])
 
@@ -158,6 +162,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       started_at: myActiveTimer.started_at,
       accumulated_ms: accMs,
       task_text: myActiveTimer.task_text,
+      task_source: myActiveTimer.task_source,
     })
   }, [userId, myActiveTimer])
 
@@ -168,6 +173,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
       started_at: new Date().toISOString(),
       accumulated_ms: myActiveTimer.accumulated_ms,
       task_text: myActiveTimer.task_text,
+      task_source: myActiveTimer.task_source,
     })
   }, [userId, myActiveTimer])
 
@@ -183,6 +189,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     setSaving(true)
     const dateStr = new Date().toISOString().split('T')[0]
     const normalizedTaskName = myActiveTimer?.task_text?.trim() || PERSONAL_FOCUS
+    const source: FocusSource = myActiveTimer?.task_source ?? 'free'
     let saveSuccess = false
 
     try {
@@ -192,6 +199,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         duration_seconds: finalElapsed,
         date: dateStr,
         task_name: normalizedTaskName,
+        source,
       })
 
       if (result.error && (result.error.code === '42703' || result.error.message?.includes('task_name'))) {
@@ -215,6 +223,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
           duration_seconds: finalElapsed,
           date: dateStr,
           task_name: normalizedTaskName,
+          source,
           created_at: new Date().toISOString(),
           userId,
         })
@@ -242,6 +251,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
     const dateStr = new Date(myActiveTimer.started_at).toISOString().split('T')[0]
     const normalizedTaskName = myActiveTimer.task_text?.trim() || PERSONAL_FOCUS
+    const source: FocusSource = myActiveTimer.task_source ?? 'free'
 
     try {
       const sb = createClient()
@@ -250,6 +260,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
         duration_seconds: ZOMBIE_CAP_SECONDS,
         date: dateStr,
         task_name: normalizedTaskName,
+        source,
       })
     } catch { /* pending sessions will catch it */ }
 

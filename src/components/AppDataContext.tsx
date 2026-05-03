@@ -26,11 +26,14 @@ interface SessionRecord {
   task_name?: string | null
 }
 
+export type FocusSource = 'ai_suggested' | 'manual' | 'free'
+
 interface DailyTask {
   id: string
   title: string
   completed: boolean
   date: string
+  source: 'ai_suggested' | 'manual'
 }
 
 export interface SquarePost {
@@ -61,6 +64,7 @@ export interface ActiveTimer {
   accumulated_ms: number
   state: 'running' | 'paused'
   task_text: string | null
+  task_source: FocusSource
   updated_at: string
 }
 
@@ -122,6 +126,7 @@ interface PendingSession {
   duration_seconds: number
   date: string
   task_name: string
+  source?: FocusSource
   created_at: string
   userId: string
 }
@@ -193,6 +198,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
           duration_seconds: s.duration_seconds,
           date: s.date,
           task_name: s.task_name,
+          source: s.source ?? 'manual',
         })
         if (error) {
           remaining.push(s)
@@ -311,7 +317,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         // Try with task_name first
         supabase.from('sessions').select('id, duration_seconds, created_at, task_name')
           .eq('user_id', user.id).eq('date', today).order('created_at', { ascending: false }),
-        supabase.from('daily_tasks').select('id, title, completed, date')
+        supabase.from('daily_tasks').select('id, title, completed, date, source')
           .eq('user_id', user.id).eq('date', today).order('created_at'),
       ])
 
