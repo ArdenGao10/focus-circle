@@ -55,6 +55,7 @@ export default function ProfilePage() {
   const { state: timerState } = useTimer()
   const liveElapsed = useLiveElapsed()
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [historyExpanded, setHistoryExpanded] = useState(false)
   const [statsView, setStatsView] = useState<'week' | 'month'>('week')
   const [statsResult, setStatsResult] = useState<StatsResult | null>(null)
   const [completedTasks, setCompletedTasks] = useState<number>(0)
@@ -247,45 +248,58 @@ export default function ProfilePage() {
         ) : dateList.length === 0 ? (
           <div className="p-6 text-center text-ink-light/40 text-sm">暂无记录</div>
         ) : (
-          <div className="divide-y divide-cream/40">
-            {dateList.slice(0, 14).map(date => {
-              const secs = sessionsByDate[date]
-              const progress = Math.min((secs / (targetMins * 60)) * 100, 100)
-              const isSelected = selectedDate === date
+          <>
+            <div className="divide-y divide-cream/40">
+              {(historyExpanded ? dateList.slice(0, 30) : dateList.slice(0, 3)).map(date => {
+                const secs = sessionsByDate[date]
+                const progress = Math.min((secs / (targetMins * 60)) * 100, 100)
+                const isSelected = selectedDate === date
 
-              return (
-                <div key={date}>
-                  <button onClick={() => setSelectedDate(isSelected ? null : date)} className="w-full flex items-center gap-3 p-3.5 hover:bg-paper-warm transition-colors text-left">
-                    <div className={`w-2 h-2 rounded-full shrink-0 ${progress >= 100 ? 'bg-sage' : 'bg-rose'}`} />
-                    <span className="text-sm font-medium w-14 shrink-0 text-ink">{formatDate(date)}</span>
-                    <div className="flex-1 h-1.5 bg-cream rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full ${progress >= 100 ? 'bg-sage' : 'bg-terracotta'}`} style={{ width: `${progress}%` }} />
-                    </div>
-                    <span className="text-sm font-medium text-ink w-16 text-right shrink-0">{formatDuration(secs)}</span>
-                    <svg className={`w-3.5 h-3.5 text-ink-light/30 shrink-0 transition-transform ${isSelected ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </button>
-                  {isSelected && dateTasks.length > 0 && (
-                    <div className="px-4 pb-3 pl-10">
-                      <div className="text-xs text-ink-light mb-1.5">当日任务</div>
-                      {dateTasks.map(t => (
-                        <div key={t.id} className="flex items-center gap-2 py-1">
-                          <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${t.completed ? 'bg-sage border-sage text-paper' : 'border-ink-light/30'}`}>
-                            {t.completed && <svg className="w-1.5 h-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                return (
+                  <div key={date}>
+                    <button onClick={() => setSelectedDate(isSelected ? null : date)} className="w-full flex items-center gap-3 p-3.5 hover:bg-paper-warm transition-colors text-left">
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${progress >= 100 ? 'bg-sage' : 'bg-rose'}`} />
+                      <span className="text-sm font-medium w-14 shrink-0 text-ink">{formatDate(date)}</span>
+                      <div className="flex-1 h-1.5 bg-cream rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${progress >= 100 ? 'bg-sage' : 'bg-terracotta'}`} style={{ width: `${progress}%` }} />
+                      </div>
+                      <span className="text-sm font-medium text-ink w-16 text-right shrink-0">{formatDuration(secs)}</span>
+                      <svg className={`w-3.5 h-3.5 text-ink-light/30 shrink-0 transition-transform ${isSelected ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {isSelected && dateTasks.length > 0 && (
+                      <div className="px-4 pb-3 pl-10">
+                        <div className="text-xs text-ink-light mb-1.5">当日任务</div>
+                        {dateTasks.map(t => (
+                          <div key={t.id} className="flex items-center gap-2 py-1">
+                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${t.completed ? 'bg-sage border-sage text-paper' : 'border-ink-light/30'}`}>
+                              {t.completed && <svg className="w-1.5 h-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                            </div>
+                            <span className={`text-xs ${t.completed ? 'text-ink-light/40 line-through' : 'text-ink'}`}>{t.title}</span>
                           </div>
-                          <span className={`text-xs ${t.completed ? 'text-ink-light/40 line-through' : 'text-ink'}`}>{t.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {isSelected && dateTasks.length === 0 && (
-                    <div className="px-4 pb-3 pl-10"><span className="text-xs text-ink-light/30">当日未设置任务</span></div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                        ))}
+                      </div>
+                    )}
+                    {isSelected && dateTasks.length === 0 && (
+                      <div className="px-4 pb-3 pl-10"><span className="text-xs text-ink-light/30">当日未设置任务</span></div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+            {dateList.length > 3 && (
+              <button
+                onClick={() => setHistoryExpanded(v => !v)}
+                className="w-full flex items-center justify-center gap-1.5 py-3 text-xs text-ink-light hover:bg-paper-warm border-t border-cream/40 transition-colors"
+              >
+                <span>{historyExpanded ? '收起' : `展开全部 ${Math.min(dateList.length, 30)} 天`}</span>
+                <svg className={`w-3 h-3 transition-transform ${historyExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            )}
+          </>
         )}
       </div>
 
