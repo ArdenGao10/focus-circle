@@ -1,18 +1,87 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, type ReactNode } from 'react'
 import { useTimer, useLiveElapsed } from '@/components/TimerContext'
 import { useAppData } from '@/components/AppDataContext'
 import DailyTasks from '@/components/DailyTasks'
 import { Leaf, Flower, Branch } from '@/components/Botanicals'
 
 const PERSONAL_FOCUS = '个人专注'
+const FOCUS_RING_TARGET_SECONDS = 3600
+
+const RING_RADIUS = 45
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
+
+type TimerVisualState = 'idle' | 'running' | 'paused'
 
 function formatTime(seconds: number): string {
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = seconds % 60
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+}
+
+function formatRingTime(seconds: number): string {
+  const totalMinutes = Math.floor(seconds / 60)
+  const s = seconds % 60
+  if (totalMinutes >= 60) {
+    const h = Math.floor(totalMinutes / 60)
+    const m = totalMinutes % 60
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+  }
+  return `${totalMinutes.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+}
+
+function ProgressRing({
+  progress,
+  state,
+  children,
+}: {
+  progress: number
+  state: TimerVisualState
+  children: ReactNode
+}) {
+  const clamped = Math.min(Math.max(progress, 0), 1)
+  const offset = RING_CIRCUMFERENCE * (1 - clamped)
+  const progressStroke =
+    state === 'running'
+      ? 'var(--sage-dark)'
+      : state === 'paused'
+      ? 'var(--sage)'
+      : 'var(--cream)'
+  return (
+    <div
+      className="relative flex items-center justify-center"
+      style={{ width: 'clamp(220px, 62vw, 300px)', height: 'clamp(220px, 62vw, 300px)' }}
+    >
+      <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+        <circle
+          cx="50"
+          cy="50"
+          r={RING_RADIUS}
+          fill="none"
+          stroke="var(--cream)"
+          strokeWidth="3.5"
+        />
+        <circle
+          cx="50"
+          cy="50"
+          r={RING_RADIUS}
+          fill="none"
+          stroke={progressStroke}
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          strokeDasharray={RING_CIRCUMFERENCE}
+          strokeDashoffset={offset}
+          className={state === 'running' ? 'animate-ring-breathe' : ''}
+          style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.4s ease' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        {children}
+      </div>
+    </div>
+  )
 }
 
 interface DisplaySession {
@@ -84,6 +153,8 @@ export default function TimerPage() {
 
   const activeTaskName = normalizeTaskName(taskName)
   const isActive = state !== 'idle'
+  const ringProgress = state === 'idle' ? 0 : Math.min(elapsed / FOCUS_RING_TARGET_SECONDS, 1)
+  const ringTaskLabel = isActive ? (taskName?.trim() || '自由专注') : ''
 
   // Check if the active task already has a historical row
   const activeHasHistory = isActive && displaySessions.some(s => s.taskName === activeTaskName)
@@ -136,33 +207,37 @@ export default function TimerPage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-3 bg-sage-light opacity-50 -translate-y-1 rounded-b-sm" />
 
         <div className="flex flex-col items-center pt-10 pb-8 px-6">
-          <div className="text-xs text-ink-light tracking-widest mb-1" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+          <div className="text-xs text-ink-light tracking-widest mb-2" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
             {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
 
-          <p className={`text-sm mb-5 px-4 py-1 rounded-full border ${
-            state === 'idle'
-              ? 'text-ink-light border-cream bg-butter-light'
-              : state === 'running'
-              ? 'text-sage-dark border-sage-light bg-sage-light/30'
-              : 'text-terracotta border-terracotta-light bg-terracotta-light/30'
-          }`} style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
-            {state === 'idle' ? '准备开始' : state === 'running' ? (taskName ? `${taskName}` : '专注中...') : '已暂停'}
+          <p
+            className={`text-sm mb-5 min-h-[1.25rem] truncate max-w-[18rem] text-center transition-colors ${
+              state === 'running' ? 'text-sage-dark' : state === 'paused' ? 'text-terracotta' : 'text-ink-light'
+            }`}
+            style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+          >
+            {ringTaskLabel}
           </p>
 
-          <div className={`text-5xl font-bold tracking-widest mb-8 font-numeric transition-colors ${
-            state === 'running' ? 'text-ink' : state === 'paused' ? 'text-terracotta' : 'text-ink-light/40'
-          }`} style={{ letterSpacing: '0.15em' }}>
-            {formatTime(elapsed)}
-          </div>
+          <ProgressRing progress={ringProgress} state={state}>
+            <div
+              className={`font-bold font-numeric transition-colors ${
+                state === 'running' ? 'text-ink' : state === 'paused' ? 'text-terracotta' : 'text-ink-light/40'
+              }`}
+              style={{ fontSize: 'clamp(2.25rem, 9vw, 3rem)', letterSpacing: '0.08em' }}
+            >
+              {formatRingTime(elapsed)}
+            </div>
+          </ProgressRing>
 
-          <div className="flex items-center gap-3 w-full mb-6">
+          <div className="flex items-center gap-3 w-full mt-7 mb-5">
             <div className="flex-1 h-px bg-cream" />
             <Flower className="w-4 h-4 text-rose-dark opacity-40" />
             <div className="flex-1 h-px bg-cream" />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 items-center">
             {state === 'idle' && (
               <button onClick={() => start()} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
                 开始专注
@@ -170,14 +245,22 @@ export default function TimerPage() {
             )}
             {state === 'running' && (
               <>
-                <button onClick={pause} className="px-6 py-2.5 border-2 border-ink-light/30 text-ink-light rounded-full text-sm font-medium hover:border-ink-light/50 active:scale-95 transition-all">暂停</button>
-                <button onClick={end} disabled={saving} className="px-6 py-2.5 bg-rose-dark text-paper rounded-full text-sm font-medium shadow-sm disabled:opacity-50 active:scale-95 transition-all">结束</button>
+                <button onClick={pause} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+                  暂停
+                </button>
+                <button onClick={end} disabled={saving} className="px-5 py-2.5 border border-ink-light/30 text-ink-light rounded-full text-sm font-medium hover:border-ink-light/50 active:scale-95 transition-all disabled:opacity-50">
+                  {saving ? '保存中...' : '结束'}
+                </button>
               </>
             )}
             {state === 'paused' && (
               <>
-                <button onClick={resume} className="px-6 py-2.5 bg-sage text-paper rounded-full text-sm font-medium shadow-sm active:scale-95 transition-all">继续</button>
-                <button onClick={end} disabled={saving} className="px-6 py-2.5 border-2 border-ink-light/30 text-ink-light rounded-full text-sm font-medium disabled:opacity-50 active:scale-95 transition-all">{saving ? '保存中...' : '结束'}</button>
+                <button onClick={resume} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+                  继续
+                </button>
+                <button onClick={end} disabled={saving} className="px-5 py-2.5 border border-ink-light/30 text-ink-light rounded-full text-sm font-medium hover:border-ink-light/50 active:scale-95 transition-all disabled:opacity-50">
+                  {saving ? '保存中...' : '结束'}
+                </button>
               </>
             )}
           </div>
