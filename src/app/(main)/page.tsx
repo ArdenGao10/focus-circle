@@ -7,10 +7,6 @@ import DailyTasks from '@/components/DailyTasks'
 import { Leaf, Flower, Branch } from '@/components/Botanicals'
 
 const PERSONAL_FOCUS = '个人专注'
-const FOCUS_RING_TARGET_SECONDS = 3600
-
-const RING_RADIUS = 45
-const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
 
 type TimerVisualState = 'idle' | 'running' | 'paused'
 
@@ -32,52 +28,91 @@ function formatRingTime(seconds: number): string {
   return `${totalMinutes.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-function ProgressRing({
-  progress,
+function HaloRings({
   state,
   children,
 }: {
-  progress: number
   state: TimerVisualState
   children: ReactNode
 }) {
-  const clamped = Math.min(Math.max(progress, 0), 1)
-  const offset = RING_CIRCUMFERENCE * (1 - clamped)
-  const progressStroke =
-    state === 'running'
-      ? 'var(--sage-dark)'
-      : state === 'paused'
-      ? 'var(--sage)'
-      : 'var(--cream)'
+  const containerOpacity = state === 'running' ? 1 : state === 'paused' ? 0.55 : 0.85
+  const filter = state === 'paused' ? 'saturate(0.5)' : 'saturate(1)'
+  const playState = state === 'paused' ? 'paused' : 'running'
+  const speedMul = state === 'running' ? 1 : 1.4
+  const ringOrigin: React.CSSProperties = { transformOrigin: '50px 50px', animationPlayState: playState }
+
   return (
     <div
       className="relative flex items-center justify-center"
       style={{ width: 'clamp(220px, 62vw, 300px)', height: 'clamp(220px, 62vw, 300px)' }}
     >
-      <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+      <svg
+        viewBox="0 0 100 100"
+        className="absolute inset-0 w-full h-full"
+        style={{
+          opacity: containerOpacity,
+          filter,
+          transition: 'opacity 0.6s ease, filter 0.6s ease',
+        }}
+      >
+        <defs>
+          <linearGradient id="halo-grad-a" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="var(--sage-dark)" />
+            <stop offset="50%" stopColor="var(--rose)" />
+            <stop offset="100%" stopColor="var(--lavender)" />
+          </linearGradient>
+          <linearGradient id="halo-grad-b" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="var(--lavender)" />
+            <stop offset="100%" stopColor="var(--sage-dark)" />
+          </linearGradient>
+          <radialGradient id="halo-grad-glow" cx="50%" cy="50%" r="50%">
+            <stop offset="55%" stopColor="var(--sage)" stopOpacity="0" />
+            <stop offset="100%" stopColor="var(--sage-dark)" stopOpacity="0.45" />
+          </radialGradient>
+        </defs>
+
+        {/* Outermost soft glow halo */}
         <circle
-          cx="50"
-          cy="50"
-          r={RING_RADIUS}
-          fill="none"
-          stroke="var(--cream)"
-          strokeWidth="3.5"
+          cx="50" cy="50" r="48"
+          fill="url(#halo-grad-glow)" stroke="none"
+          style={{
+            ...ringOrigin,
+            animation: `halo-glow ${8 * speedMul}s ease-in-out infinite`,
+          }}
         />
+
+        {/* Outer gradient ring — clockwise rotate + breathe */}
         <circle
-          cx="50"
-          cy="50"
-          r={RING_RADIUS}
-          fill="none"
-          stroke={progressStroke}
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          strokeDasharray={RING_CIRCUMFERENCE}
-          strokeDashoffset={offset}
-          className={state === 'running' ? 'animate-ring-breathe' : ''}
-          style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.4s ease' }}
+          cx="50" cy="50" r="46"
+          fill="none" stroke="url(#halo-grad-a)" strokeWidth="0.9"
+          style={{
+            ...ringOrigin,
+            animation: `halo-outer ${7 * speedMul}s ease-in-out infinite`,
+          }}
+        />
+
+        {/* Middle dashed ring — counter-rotate (visible dash motion) */}
+        <circle
+          cx="50" cy="50" r="39"
+          fill="none" stroke="url(#halo-grad-b)" strokeWidth="1.4"
+          strokeDasharray="2 3" strokeLinecap="round"
+          style={{
+            ...ringOrigin,
+            animation: `halo-middle ${5.5 * speedMul}s ease-in-out infinite`,
+          }}
+        />
+
+        {/* Inner thin ring — gentle breath */}
+        <circle
+          cx="50" cy="50" r="32"
+          fill="none" stroke="var(--sage-dark)" strokeWidth="0.6"
+          style={{
+            ...ringOrigin,
+            animation: `halo-inner ${4 * speedMul}s ease-in-out infinite`,
+          }}
         />
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
+      <div className="absolute inset-0 flex items-center justify-center">
         {children}
       </div>
     </div>
@@ -153,7 +188,6 @@ export default function TimerPage() {
 
   const activeTaskName = normalizeTaskName(taskName)
   const isActive = state !== 'idle'
-  const ringProgress = state === 'idle' ? 0 : Math.min(elapsed / FOCUS_RING_TARGET_SECONDS, 1)
   const ringTaskLabel = isActive ? (taskName?.trim() || '自由专注') : ''
 
   // Check if the active task already has a historical row
@@ -220,7 +254,7 @@ export default function TimerPage() {
             {ringTaskLabel}
           </p>
 
-          <ProgressRing progress={ringProgress} state={state}>
+          <HaloRings state={state}>
             <div
               className={`font-bold font-numeric transition-colors ${
                 state === 'running' ? 'text-ink' : state === 'paused' ? 'text-terracotta' : 'text-ink-light/40'
@@ -229,7 +263,7 @@ export default function TimerPage() {
             >
               {formatRingTime(elapsed)}
             </div>
-          </ProgressRing>
+          </HaloRings>
 
           <div className="flex items-center gap-3 w-full mt-7 mb-5">
             <div className="flex-1 h-px bg-cream" />
