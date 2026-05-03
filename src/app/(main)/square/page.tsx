@@ -38,7 +38,7 @@ export default function SquarePage() {
   const [content, setContent] = useState('')
   const [link, setLink] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [todayPosted, setTodayPosted] = useState(false)
+  const [postedThisSession, setPostedThisSession] = useState(false)
   const [error, setError] = useState('')
   const [recentlyAnimated, setRecentlyAnimated] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<string | null>(null)
@@ -89,7 +89,7 @@ export default function SquarePage() {
 
     if (count && count > 0) {
       setError('今日已发布，明天再来吧 🌸')
-      setTodayPosted(true)
+      setPostedThisSession(true)
       setSubmitting(false)
       return
     }
@@ -130,11 +130,16 @@ export default function SquarePage() {
     setTitle('')
     setContent('')
     setLink('')
-    setTodayPosted(true)
+    setPostedThisSession(true)
     setSubmitting(false)
   }
 
   const posts = squarePosts
+  const todayUtc = new Date().toISOString().slice(0, 10)
+  const hasPostedToday = !!userId && (squarePosts ?? []).some(
+    p => p.user_id === userId && p.created_at.slice(0, 10) === todayUtc
+  )
+  const todayPosted = postedThisSession || hasPostedToday
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6 flex flex-col" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
@@ -153,8 +158,8 @@ export default function SquarePage() {
         </div>
       </div>
 
-      {/* Posts list */}
-      <div className="flex-1 space-y-3 mb-4">
+      {/* Posts list — bottom padding clears the sticky form when scrolling */}
+      <div className={`flex-1 space-y-3 ${ready && userId ? (todayPosted ? 'pb-28' : 'pb-60') : 'mb-4'}`}>
         {posts === null ? (
           [1, 2, 3].map(i => (
             <div key={i} className="bg-paper rounded-xl border border-cream p-4 animate-pulse space-y-2">
