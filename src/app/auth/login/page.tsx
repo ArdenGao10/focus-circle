@@ -34,7 +34,7 @@ export default function LoginPage() {
         <div className="bg-paper rounded-2xl border border-cream p-6 shadow-sm paper-texture">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">🌿</div>
-            <h1 className="text-2xl font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+            <h1 className="text-2xl font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
               专注圈
             </h1>
             <p className="text-ink-light text-xs mt-1">登录你的账号</p>
@@ -69,7 +69,7 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
               className="w-full py-3 bg-sage text-paper rounded-xl font-medium disabled:opacity-50 shadow-sm active:scale-[0.98] transition-all"
-              style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+              style={{ fontFamily: 'var(--font-display)' }}
             >
               {loading ? '登录中...' : '登录'}
             </button>

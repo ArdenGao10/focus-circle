@@ -31,7 +31,7 @@ export default function TimerRecovery() {
 
         <div className="text-center mb-4 pt-2">
           <Flower className="w-8 h-8 mx-auto text-rose mb-2" />
-          <h2 className="text-base font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+          <h2 className="text-base font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
             发现一次超长专注记录
           </h2>
           <p className="text-xs text-ink-light mt-1">看起来你可能忘记点结束了</p>
@@ -51,14 +51,14 @@ export default function TimerRecovery() {
             onClick={handleSave}
             disabled={saving}
             className="w-full py-2.5 bg-sage text-paper rounded-xl text-sm font-medium disabled:opacity-50 active:scale-[0.98] transition-all"
-            style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+            style={{ fontFamily: 'var(--font-display)' }}
           >
             {saving ? '保存中...' : '保存（按12小时计）'}
           </button>
           <button
             onClick={zombieContinue}
             className="w-full py-2.5 bg-lavender text-paper rounded-xl text-sm font-medium active:scale-[0.98] transition-all"
-            style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+            style={{ fontFamily: 'var(--font-display)' }}
           >
             继续计时
           </button>

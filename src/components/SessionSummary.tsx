@@ -29,7 +29,7 @@ export default function SessionSummary() {
 
         <div className="text-center mb-5 pt-2">
           <div className="text-3xl mb-2">🌸</div>
-          <h2 className="text-lg font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+          <h2 className="text-lg font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
             专注完成
           </h2>
           <p className="text-ink-light text-xs mt-0.5">又一次认真的时光</p>
@@ -50,7 +50,7 @@ export default function SessionSummary() {
         <button
           onClick={clearLastSession}
           className="w-full py-3 bg-sage text-paper rounded-xl font-medium active:scale-[0.98] transition-transform"
-          style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+          style={{ fontFamily: 'var(--font-display)' }}
         >
           继续加油
         </button>

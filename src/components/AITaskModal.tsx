@@ -105,7 +105,7 @@ export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITask
         <div className="p-5 pb-3 pt-6">
           <div className="flex items-center gap-2 mb-1">
             <Flower className="w-4 h-4 text-lavender" />
-            <h2 className="text-base font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+            <h2 className="text-base font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
               AI 拆解任务
             </h2>
           </div>

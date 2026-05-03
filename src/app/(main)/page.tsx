@@ -219,7 +219,7 @@ export default function TimerPage() {
           <div className="flex items-start gap-3">
             <span className="text-xl shrink-0 mt-0.5">🌸</span>
             <div>
-              <p className="text-sm font-semibold text-ink mb-1" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>欢迎来到专注圈！</p>
+              <p className="text-sm font-semibold text-ink mb-1" style={{ fontFamily: 'var(--font-display)' }}>欢迎来到专注圈！</p>
               <p className="text-xs text-ink-light leading-relaxed">
                 试试先在下面设一个今天要做的事，然后点「开始专注」，用正计时记录你真实的投入。不设倒计时、不设打卡天数，你学多久算多久。
               </p>
@@ -236,7 +236,7 @@ export default function TimerPage() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-3 bg-sage-light opacity-50 -translate-y-1 rounded-b-sm" />
 
         <div className="flex flex-col items-center pt-10 pb-8 px-6">
-          <div className="text-xs text-ink-light tracking-widest mb-2" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+          <div className="text-xs text-ink-light tracking-widest mb-2" style={{ fontFamily: 'var(--font-display)' }}>
             {new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })}
           </div>
 
@@ -244,7 +244,7 @@ export default function TimerPage() {
             className={`text-sm mb-5 min-h-[1.25rem] truncate max-w-[18rem] text-center transition-colors ${
               state === 'running' ? 'text-sage-dark' : state === 'paused' ? 'text-terracotta' : 'text-ink-light'
             }`}
-            style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+            style={{ fontFamily: 'var(--font-display)' }}
           >
             {ringTaskLabel}
           </p>
@@ -268,13 +268,13 @@ export default function TimerPage() {
 
           <div className="flex gap-3 items-center">
             {state === 'idle' && (
-              <button onClick={() => start()} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+              <button onClick={() => start()} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: 'var(--font-display)' }}>
                 开始专注
               </button>
             )}
             {state === 'running' && (
               <>
-                <button onClick={pause} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+                <button onClick={pause} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: 'var(--font-display)' }}>
                   暂停
                 </button>
                 <button onClick={end} disabled={saving} className="px-5 py-2.5 border border-ink-light/30 text-ink-light rounded-full text-sm font-medium hover:border-ink-light/50 active:scale-95 transition-all disabled:opacity-50">
@@ -284,7 +284,7 @@ export default function TimerPage() {
             )}
             {state === 'paused' && (
               <>
-                <button onClick={resume} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+                <button onClick={resume} className="px-8 py-3 bg-sage text-paper rounded-full text-base font-medium shadow-sm hover:bg-sage-dark active:scale-95 transition-all" style={{ fontFamily: 'var(--font-display)' }}>
                   继续
                 </button>
                 <button onClick={end} disabled={saving} className="px-5 py-2.5 border border-ink-light/30 text-ink-light rounded-full text-sm font-medium hover:border-ink-light/50 active:scale-95 transition-all disabled:opacity-50">
@@ -301,7 +301,7 @@ export default function TimerPage() {
         <div className="relative bg-paper rounded-2xl border border-cream p-4 shadow-sm paper-texture">
           <div className="absolute top-0 right-8 w-16 h-3 bg-lavender-light opacity-50 -translate-y-1 rounded-b-sm rotate-1" />
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>今日记录</span>
+            <span className="text-sm font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>今日记录</span>
             <span className="text-xs px-2.5 py-0.5 rounded-full bg-sage-light/40 text-sage-dark font-numeric">共 {formatTime(todayTotal)}</span>
           </div>
           <div className="space-y-2">

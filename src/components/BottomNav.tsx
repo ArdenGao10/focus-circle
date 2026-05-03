@@ -40,7 +40,7 @@ export default function BottomNav() {
               className={`relative flex flex-col items-center gap-0.5 text-xs transition-colors ${
                 active ? 'text-ink font-medium' : 'text-ink-light/50'
               }`}
-              style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+              style={{ fontFamily: 'var(--font-display)' }}
             >
               <span className="text-lg relative">
                 {tab.icon}

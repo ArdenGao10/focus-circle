@@ -145,10 +145,10 @@ export default function SquarePage() {
     <div className="max-w-lg mx-auto px-4 py-6 flex flex-col" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
       {/* Header */}
       <div className="relative mb-5">
-        <h1 className="text-xl font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+        <h1 className="text-2xl font-bold text-ink leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
           学习广场
         </h1>
-        <p className="text-xs text-ink-light mt-1">分享你的学习资源，和大家一起进步</p>
+        <p className="text-sm text-ink-light italic mt-0.5" style={{ fontFamily: 'var(--font-script)' }}>shared by people studying alongside you</p>
         <div className="flex items-center gap-2 mt-2">
           <div className="flex-1 h-px bg-cream" />
           <Flower className="w-3 h-3 text-rose opacity-50" />
@@ -192,7 +192,7 @@ export default function SquarePage() {
                   </div>
                   <span className="text-xs text-ink-light/50 shrink-0">{timeAgo(post.created_at)}</span>
                 </div>
-                <h3 className="text-sm font-semibold text-ink mb-1" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>{post.title}</h3>
+                <h3 className="text-sm font-semibold text-ink mb-1" style={{ fontFamily: 'var(--font-display)' }}>{post.title}</h3>
                 <p className="text-sm text-ink-light leading-relaxed whitespace-pre-wrap">{post.content}</p>
                 {post.link && (
                   <a

@@ -41,7 +41,7 @@ export default function ResetPasswordPage() {
         <div className="bg-paper rounded-2xl border border-cream p-6 shadow-sm paper-texture">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">🌿</div>
-            <h1 className="text-xl font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+            <h1 className="text-xl font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
               设置新密码
             </h1>
             <p className="text-ink-light text-xs mt-1">请输入你的新密码</p>
@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
                 type="submit"
                 disabled={loading}
                 className="w-full py-3 bg-sage text-paper rounded-xl font-medium disabled:opacity-50 shadow-sm active:scale-[0.98] transition-all"
-                style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+                style={{ fontFamily: 'var(--font-display)' }}
               >
                 {loading ? '更新中...' : '确认更新'}
               </button>

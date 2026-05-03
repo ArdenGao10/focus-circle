@@ -1,25 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  --background: #faf6f0;
-  --foreground: #4a4035;
-  --paper: #fefcf8;
-  --paper-warm: #f7f0e6;
-  --ink: #4a4035;
-  --ink-light: #8a7e72;
-  --sage: #a8b5a0;
-  --sage-light: #d4ddd0;
-  --sage-dark: #7a8f70;
-  --rose: #d4a5a0;
-  --rose-light: #f0ddd9;
-  --rose-dark: #b88a85;
-  --lavender: #b8a9c8;
-  --lavender-light: #e0d6ea;
-  --cream: #f0e6d3;
-  --butter: #e8d8a8;
-  --butter-light: #f5edda;
-  --terracotta: #c4956a;
-  --terracotta-light: #eedcc8;
+  /* Surfaces — bg darker so paper cards visibly lift */
+  --background: #f1ebe0;
+  --foreground: #2a241e;
+  --paper: #ffffff;
+  --paper-warm: #f5ede0;
+  --cream: #e8dcc4;
+
+  /* Text — AA-compliant against #ffffff (ink 14.8:1, ink-light 6.5:1) */
+  --ink: #2a241e;
+  --ink-light: #6b5e52;
+
+  /* Accents — saturation +10~25% so CTA / links read as actionable */
+  --sage: #8ea285;
+  --sage-light: #cad8c2;
+  --sage-dark: #5a7a4f;
+  --rose: #cf8e85;
+  --rose-light: #f0d0c8;
+  --rose-dark: #a16560;
+  --lavender: #9d8bb6;
+  --lavender-light: #d8c8e8;
+  --butter: #e0c980;
+  --butter-light: #f0e3b8;
+  --terracotta: #b87e48;
+  --terracotta-light: #ecd0b0;
+
+  /* Typography cascades — display = bold transitional serif (Latin) +
+     system Chinese serif/sans fallback. script = handwritten italic accent. */
+  --font-display: var(--font-fraunces), 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Songti SC', 'Noto Serif SC', Georgia, serif;
+  --font-script: var(--font-caveat), 'Bradley Hand', 'Apple Chancery', cursive;
+  --font-body: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
 }
 
 @theme inline {
@@ -52,12 +63,17 @@
   --animate-halo-middle: halo-middle 5.5s ease-in-out infinite;
   --animate-halo-inner: halo-inner 4s ease-in-out infinite;
   --animate-encourage-pop: encourage-pop 0.42s ease-out;
+  --font-display: var(--font-display);
+  --font-script: var(--font-script);
+  --font-body: var(--font-body);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: 'Noto Serif SC', 'Georgia', serif;
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-numeric {

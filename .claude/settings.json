@@ -3,7 +3,22 @@
     "allow": [
       "Bash(curl -s http://localhost:3000/api/ai-tasks)",
       "Bash(curl -s -X POST http://localhost:3000/api/ai-tasks -H 'Content-Type: application/json' -d '{\"goal\":\"学英语\"}')",
-      "Bash(npx opennextjs-cloudflare:*)"
+      "Bash(npx opennextjs-cloudflare:*)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(git stash *)",
+      "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -sL -o /dev/null -w \"Final HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(kill bjsarl27j *)",
+      "Bash(pkill -f \"next dev.*3001\")",
+      "Bash(curl -sL -o /dev/null -w \"Square HTTP %{http_code}\\\\n\" http://localhost:3000/square)",
+      "Bash(curl -sL -o /dev/null -w \"Home HTTP %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(npm i *)",
+      "Bash(curl -sL -o /dev/null -w \"Profile HTTP %{http_code}\\\\n\" http://localhost:3000/profile)",
+      "Bash(xargs sed *)",
+      "Bash(curl -sL -o /dev/null -w \"Profile %{http_code}\\\\n\" http://localhost:3000/profile)",
+      "Bash(curl -sL -o /dev/null -w \"Square %{http_code}\\\\n\" http://localhost:3000/square)",
+      "Bash(curl -sL -o /dev/null -w \"Home %{http_code}\\\\n\" http://localhost:3000/)"
     ]
   }
 }

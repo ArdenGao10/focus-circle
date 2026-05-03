@@ -84,9 +84,12 @@ export default function LeaderboardPage() {
       {/* Header */}
       <div className="relative mb-5">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
-            排行榜
-          </h1>
+          <div>
+            <h1 className="text-2xl font-bold text-ink leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
+              排行榜
+            </h1>
+            <p className="text-sm text-ink-light italic mt-0.5" style={{ fontFamily: 'var(--font-script)' }}>where everyone shows up today</p>
+          </div>
           {myGoal && (
             <button
               onClick={() => setFilterGoal(!filterGoal)}

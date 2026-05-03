@@ -11,7 +11,7 @@ export default function FeedbackPage() {
         <div className="absolute top-0 left-10 w-16 h-2.5 bg-lavender-light opacity-50 -translate-y-0.5 rounded-b-sm rotate-[-1deg]" />
 
         <div className="pt-2">
-          <h1 className="text-xl font-bold text-ink mb-2" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+          <h1 className="text-xl font-bold text-ink mb-2" style={{ fontFamily: 'var(--font-display)' }}>
             听你吐槽，是我今天最想做的事
           </h1>
           <p className="text-sm text-ink-light leading-relaxed">
@@ -24,7 +24,7 @@ export default function FeedbackPage() {
       <div className="bg-paper rounded-2xl border border-cream p-5 shadow-sm paper-texture">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">💬</span>
-          <h2 className="text-sm font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+          <h2 className="text-sm font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
             加我微信直接聊
           </h2>
         </div>
@@ -41,7 +41,7 @@ export default function FeedbackPage() {
       <div className="bg-paper rounded-2xl border border-cream p-5 shadow-sm paper-texture">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">📝</span>
-          <h2 className="text-sm font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+          <h2 className="text-sm font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
             或者匿名填个问卷
           </h2>
         </div>
@@ -60,7 +60,7 @@ export default function FeedbackPage() {
       <div className="bg-paper rounded-2xl border border-cream p-5 shadow-sm paper-texture">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-lg">📧</span>
-          <h2 className="text-sm font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+          <h2 className="text-sm font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
             也可以直接邮件
           </h2>
         </div>

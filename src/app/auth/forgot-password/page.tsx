@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
         <div className="bg-paper rounded-2xl border border-cream p-6 shadow-sm paper-texture">
           <div className="text-center mb-6">
             <div className="text-3xl mb-2">🌿</div>
-            <h1 className="text-xl font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+            <h1 className="text-xl font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
               找回密码
             </h1>
             <p className="text-ink-light text-xs mt-1">输入你的注册邮箱，我们会发送重置链接</p>
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
                 type="submit"
                 disabled={loading}
                 className="w-full py-3 bg-sage text-paper rounded-xl font-medium disabled:opacity-50 shadow-sm active:scale-[0.98] transition-all"
-                style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+                style={{ fontFamily: 'var(--font-display)' }}
               >
                 {loading ? '发送中...' : '发送重置链接'}
               </button>

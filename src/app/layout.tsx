@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Fraunces, Caveat } from "next/font/google";
 import PWARegister from "@/components/PWARegister";
 import "./globals.css";
 
@@ -20,6 +21,21 @@ const numericFont = localFont({
   display: "swap",
 });
 
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  style: ["normal", "italic"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  variable: "--font-caveat",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "专注圈 - 学习打卡",
   description: "和志同道合的人一起学习打卡",
@@ -30,7 +46,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#faf6f0",
+  themeColor: "#f1ebe0",
 };
 
 export default function RootLayout({
@@ -39,7 +55,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="zh-CN" className={`h-full ${numericFont.variable}`}>
+    <html lang="zh-CN" className={`h-full ${numericFont.variable} ${fraunces.variable} ${caveat.variable}`}>
       <body className="h-full antialiased">
         <PWARegister />
         {children}

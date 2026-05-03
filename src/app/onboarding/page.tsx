@@ -67,7 +67,7 @@ export default function OnboardingPage() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-3 bg-sage-light opacity-50 -translate-y-1 rounded-b-sm" />
 
           <div className="text-center mb-6 pt-2">
-            <h1 className="text-xl font-bold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+            <h1 className="text-xl font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
               设置你的资料
             </h1>
             <p className="text-ink-light text-xs mt-1">让大家认识你</p>
@@ -159,7 +159,7 @@ export default function OnboardingPage() {
               type="submit"
               disabled={loading || !nickname.trim() || !finalGoal.trim()}
               className="w-full py-3 bg-sage text-paper rounded-xl font-medium disabled:opacity-50 shadow-sm active:scale-[0.98] transition-all"
-              style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}
+              style={{ fontFamily: 'var(--font-display)' }}
             >
               {loading ? '保存中...' : '开始打卡'}
             </button>

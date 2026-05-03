@@ -110,7 +110,7 @@ export default function DailyTasks() {
 
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>
+          <span className="text-sm font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
             今日任务
           </span>
           {todayTasks.length > 0 && (

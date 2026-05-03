@@ -133,11 +133,9 @@ export default function ProfilePage() {
             {profile.nickname.charAt(0)}
           </div>
           <div className="flex-1">
-            <div className="font-bold text-lg text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>{profile.nickname}</div>
-            <div className="text-xs text-ink-light">{profile.email}</div>
-            <div className="mt-1">
-              <span className="text-xs px-2 py-0.5 bg-sage-light/30 text-sage-dark rounded border border-sage-light">{profile.goal}</span>
-            </div>
+            <div className="font-bold text-2xl text-ink leading-tight" style={{ fontFamily: 'var(--font-display)' }}>{profile.nickname}</div>
+            <div className="text-sm text-ink-light italic mt-0.5" style={{ fontFamily: 'var(--font-script)' }}>focusing on {profile.goal}</div>
+            <div className="text-[11px] text-ink-light/70 mt-1">{profile.email}</div>
           </div>
         </div>
       </div>
@@ -165,7 +163,7 @@ export default function ProfilePage() {
         <div className="p-4 border-b border-cream/60 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sprig className="w-4 h-6 text-sage-dark" />
-            <h2 className="font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>学习统计</h2>
+            <h2 className="font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>学习统计</h2>
           </div>
           <div className="inline-flex bg-paper-warm rounded-full p-0.5 border border-cream">
             {(['week', 'month'] as const).map(v => (
@@ -233,7 +231,7 @@ export default function ProfilePage() {
         <div className="p-4 border-b border-cream/60">
           <div className="flex items-center gap-2">
             <Sprig className="w-4 h-6 text-sage-dark" />
-            <h2 className="font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>学习记录</h2>
+            <h2 className="font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>学习记录</h2>
           </div>
         </div>
         {!historyLoaded ? (
