@@ -44,7 +44,7 @@ function HaloRings({
   return (
     <div
       className="relative flex items-center justify-center"
-      style={{ width: 'clamp(220px, 62vw, 300px)', height: 'clamp(220px, 62vw, 300px)' }}
+      style={{ width: 'clamp(180px, 50vw, 240px)', height: 'clamp(180px, 50vw, 240px)' }}
     >
       <svg
         viewBox="0 0 100 100"
@@ -58,16 +58,11 @@ function HaloRings({
         <defs>
           <linearGradient id="halo-grad-a" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="var(--sage-dark)" />
-            <stop offset="50%" stopColor="var(--rose)" />
-            <stop offset="100%" stopColor="var(--lavender)" />
-          </linearGradient>
-          <linearGradient id="halo-grad-b" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="var(--lavender)" />
-            <stop offset="100%" stopColor="var(--sage-dark)" />
+            <stop offset="100%" stopColor="var(--sage-light)" />
           </linearGradient>
           <radialGradient id="halo-grad-glow" cx="50%" cy="50%" r="50%">
             <stop offset="55%" stopColor="var(--sage)" stopOpacity="0" />
-            <stop offset="100%" stopColor="var(--sage-dark)" stopOpacity="0.45" />
+            <stop offset="100%" stopColor="var(--sage)" stopOpacity="0.35" />
           </radialGradient>
         </defs>
 
@@ -84,7 +79,7 @@ function HaloRings({
         {/* Outer gradient ring — clockwise rotate + breathe */}
         <circle
           cx="50" cy="50" r="46"
-          fill="none" stroke="url(#halo-grad-a)" strokeWidth="0.9"
+          fill="none" stroke="url(#halo-grad-a)" strokeWidth="0.8"
           style={{
             ...ringOrigin,
             animation: `halo-outer ${7 * speedMul}s ease-in-out infinite`,
@@ -94,8 +89,8 @@ function HaloRings({
         {/* Middle dashed ring — counter-rotate (visible dash motion) */}
         <circle
           cx="50" cy="50" r="39"
-          fill="none" stroke="url(#halo-grad-b)" strokeWidth="1.4"
-          strokeDasharray="2 3" strokeLinecap="round"
+          fill="none" stroke="var(--sage-dark)" strokeWidth="1"
+          strokeDasharray="1.5 3" strokeLinecap="round" opacity="0.7"
           style={{
             ...ringOrigin,
             animation: `halo-middle ${5.5 * speedMul}s ease-in-out infinite`,
@@ -105,7 +100,7 @@ function HaloRings({
         {/* Inner thin ring — gentle breath */}
         <circle
           cx="50" cy="50" r="32"
-          fill="none" stroke="var(--sage-dark)" strokeWidth="0.6"
+          fill="none" stroke="var(--sage)" strokeWidth="0.5" opacity="0.6"
           style={{
             ...ringOrigin,
             animation: `halo-inner ${4 * speedMul}s ease-in-out infinite`,
@@ -259,7 +254,7 @@ export default function TimerPage() {
               className={`font-bold font-numeric transition-colors ${
                 state === 'running' ? 'text-ink' : state === 'paused' ? 'text-terracotta' : 'text-ink-light/40'
               }`}
-              style={{ fontSize: 'clamp(2.25rem, 9vw, 3rem)', letterSpacing: '0.08em' }}
+              style={{ fontSize: 'clamp(1.875rem, 7vw, 2.5rem)', letterSpacing: '0.08em' }}
             >
               {formatRingTime(elapsed)}
             </div>
