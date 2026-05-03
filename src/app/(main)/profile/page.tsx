@@ -6,6 +6,17 @@ import { useRouter } from 'next/navigation'
 import { useAppData } from '@/components/AppDataContext'
 import { useTimer, useLiveElapsed } from '@/components/TimerContext'
 import { Branch, Sprig } from '@/components/Botanicals'
+import FocusBarChart from '@/components/FocusBarChart'
+import {
+  fetchSessionsSince,
+  fetchCompletedTaskCount,
+  bucketByDay,
+  bucketByWeek,
+  rangeStartISO,
+  rangeStartDateKey,
+  todayDateKey,
+  type StatsResult,
+} from '@/lib/focusStats'
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -40,15 +51,45 @@ function ProfileSkeleton() {
 }
 
 export default function ProfilePage() {
-  const { profile, dailyTasks, pendingCount, retryPendingSessions, profileHistory, loadProfileHistory } = useAppData()
+  const { profile, dailyTasks, pendingCount, retryPendingSessions, profileHistory, loadProfileHistory, userId } = useAppData()
   const { state: timerState } = useTimer()
   const liveElapsed = useLiveElapsed()
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [statsView, setStatsView] = useState<'week' | 'month'>('week')
+  const [statsResult, setStatsResult] = useState<StatsResult | null>(null)
+  const [completedTasks, setCompletedTasks] = useState<number>(0)
+  const [statsLoading, setStatsLoading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
     loadProfileHistory()
   }, [loadProfileHistory])
+
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    async function load() {
+      if (!userId) return
+      setStatsLoading(true)
+      const days = statsView === 'week' ? 7 : 28
+      const sinceISO = rangeStartISO(days)
+      const fromKey = rangeStartDateKey(days)
+      const toKey = todayDateKey()
+      const [sessions, taskCount] = await Promise.all([
+        fetchSessionsSince(userId, sinceISO),
+        fetchCompletedTaskCount(userId, fromKey, toKey),
+      ])
+      if (cancelled) return
+      const result = statsView === 'week'
+        ? bucketByDay(sessions, 7)
+        : bucketByWeek(sessions, 4)
+      setStatsResult(result)
+      setCompletedTasks(taskCount)
+      setStatsLoading(false)
+    }
+    load()
+    return () => { cancelled = true }
+  }, [statsView, userId])
 
   async function handleLogout() {
     const supabase = createClient()
@@ -116,6 +157,74 @@ export default function ProfilePage() {
         <div className="bg-paper rounded-xl border border-cream p-3 text-center paper-texture">
           <div className="text-2xl font-bold text-lavender">{targetMins}</div>
           <div className="text-xs text-ink-light mt-0.5">日目标(分)</div>
+        </div>
+      </div>
+
+      {/* Stats — week / month focus chart */}
+      <div className="bg-paper rounded-2xl border border-cream shadow-sm overflow-hidden paper-texture">
+        <div className="p-4 border-b border-cream/60 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sprig className="w-4 h-6 text-sage-dark" />
+            <h2 className="font-semibold text-ink" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>学习统计</h2>
+          </div>
+          <div className="inline-flex bg-paper-warm rounded-full p-0.5 border border-cream">
+            {(['week', 'month'] as const).map(v => (
+              <button
+                key={v}
+                onClick={() => setStatsView(v)}
+                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                  statsView === v
+                    ? 'bg-sage text-paper shadow-sm'
+                    : 'text-ink-light hover:text-ink'
+                }`}
+              >
+                {v === 'week' ? '周' : '月'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-4 space-y-4">
+          {statsLoading && !statsResult ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 gap-2">
+                {[1, 2, 3].map(i => <div key={i} className="h-14 bg-cream/60 rounded-xl animate-pulse" />)}
+              </div>
+              <div className="h-44 bg-cream/40 rounded-xl animate-pulse" />
+            </div>
+          ) : !statsResult || statsResult.summary.totalSessions === 0 ? (
+            <div className="py-10 text-center">
+              <p className="text-sm text-ink-light">还没有学习记录</p>
+              <p className="text-xs text-ink-light/50 mt-1">开始你的第一段专注吧 🌸</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                <div className="bg-paper-warm rounded-xl p-2.5 text-center border border-cream/60">
+                  <div className="text-lg font-bold text-sage-dark font-numeric">
+                    {Math.floor(statsResult.summary.totalMinutes / 60) > 0
+                      ? `${Math.floor(statsResult.summary.totalMinutes / 60)}h${statsResult.summary.totalMinutes % 60}m`
+                      : `${statsResult.summary.totalMinutes}m`}
+                  </div>
+                  <div className="text-[10px] text-ink-light mt-0.5">{statsView === 'week' ? '本周' : '近 4 周'}总时长</div>
+                </div>
+                <div className="bg-paper-warm rounded-xl p-2.5 text-center border border-cream/60">
+                  <div className="text-lg font-bold text-terracotta font-numeric">{completedTasks}</div>
+                  <div className="text-[10px] text-ink-light mt-0.5">完成任务数</div>
+                </div>
+                <div className="bg-paper-warm rounded-xl p-2.5 text-center border border-cream/60">
+                  <div className="text-lg font-bold text-lavender font-numeric">{statsResult.summary.avgDailyMinutes}m</div>
+                  <div className="text-[10px] text-ink-light mt-0.5">日均时长</div>
+                </div>
+              </div>
+
+              <FocusBarChart
+                data={statsResult.buckets}
+                unit={statsView === 'week' ? 'day' : 'week'}
+                height={160}
+              />
+            </>
+          )}
         </div>
       </div>
 
