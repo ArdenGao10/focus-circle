@@ -16,18 +16,59 @@ function timeAgo(dateStr: string): string {
   return `${days}天前`
 }
 
+function SparkleIcon({ filled, className }: { filled: boolean; className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill={filled ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M12 2 L13.6 10.4 L22 12 L13.6 13.6 L12 22 L10.4 13.6 L2 12 L10.4 10.4 Z" />
+    </svg>
+  )
+}
+
 export default function SquarePage() {
-  const { ready, userId, squarePosts, loadSquarePosts, setSquarePosts } = useAppData()
+  const { ready, userId, squarePosts, loadSquarePosts, setSquarePosts, postEncouragements, encouragePost } = useAppData()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [link, setLink] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [todayPosted, setTodayPosted] = useState(false)
   const [error, setError] = useState('')
+  const [recentlyAnimated, setRecentlyAnimated] = useState<Set<string>>(new Set())
+  const [toast, setToast] = useState<string | null>(null)
 
   useEffect(() => {
     loadSquarePosts()
   }, [loadSquarePosts])
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 2400)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  async function handleEncourage(postId: string) {
+    setRecentlyAnimated(prev => {
+      const next = new Set(prev)
+      next.add(postId)
+      return next
+    })
+    setTimeout(() => {
+      setRecentlyAnimated(prev => {
+        const next = new Set(prev)
+        next.delete(postId)
+        return next
+      })
+    }, 500)
+    const res = await encouragePost(postId)
+    if (!res.ok) setToast('鼓励失败，请稍后再试')
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -79,6 +120,7 @@ export default function SquarePage() {
 
       const newPost: SquarePost = {
         ...data,
+        user_id: userId,
         nickname: profile?.nickname || '匿名',
         goal: profile?.goal || '',
       }
@@ -128,36 +170,70 @@ export default function SquarePage() {
             <p className="text-xs text-ink-light/50 mt-1">成为第一个分享资源的人吧</p>
           </div>
         ) : (
-          posts.map(post => (
-            <div key={post.id} className="relative bg-paper rounded-xl border border-cream p-4 shadow-sm paper-texture">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-full bg-lavender text-paper flex items-center justify-center text-xs font-bold">
-                  {post.nickname.charAt(0)}
+          posts.map(post => {
+            const isOwner = !!userId && post.user_id === userId
+            const myEncouraged = !!userId && postEncouragements.some(e => e.post_id === post.id && e.user_id === userId)
+            const ownerCount = isOwner ? postEncouragements.filter(e => e.post_id === post.id).length : 0
+            const showFooter = !!userId && (!isOwner || (isOwner && ownerCount > 0))
+            return (
+              <div key={post.id} className="relative bg-paper rounded-xl border border-cream p-4 shadow-sm paper-texture">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-full bg-lavender text-paper flex items-center justify-center text-xs font-bold">
+                    {post.nickname.charAt(0)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium text-ink">{post.nickname}</span>
+                    <span className="text-xs px-1.5 py-0.5 bg-cream/60 text-ink-light rounded ml-1.5">{post.goal}</span>
+                  </div>
+                  <span className="text-xs text-ink-light/50 shrink-0">{timeAgo(post.created_at)}</span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-medium text-ink">{post.nickname}</span>
-                  <span className="text-xs px-1.5 py-0.5 bg-cream/60 text-ink-light rounded ml-1.5">{post.goal}</span>
-                </div>
-                <span className="text-xs text-ink-light/50 shrink-0">{timeAgo(post.created_at)}</span>
+                <h3 className="text-sm font-semibold text-ink mb-1" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>{post.title}</h3>
+                <p className="text-sm text-ink-light leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                {post.link && (
+                  <a
+                    href={post.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 mt-2 text-xs text-lavender hover:text-lavender-light transition-colors"
+                  >
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                    查看链接
+                  </a>
+                )}
+                {showFooter && (
+                  <div className="flex items-center justify-end mt-3 pt-2.5 border-t border-cream/50">
+                    {isOwner ? (
+                      <span className="inline-flex items-center gap-1 text-xs text-rose-dark/85">
+                        <SparkleIcon filled className="w-3.5 h-3.5" />
+                        {ownerCount} 人鼓励了你
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleEncourage(post.id)}
+                        disabled={myEncouraged}
+                        aria-label={myEncouraged ? '已鼓励' : '鼓励'}
+                        className={`p-1.5 rounded-full transition-colors ${
+                          myEncouraged
+                            ? 'cursor-default opacity-70'
+                            : 'hover:bg-rose-light/40 active:scale-95'
+                        }`}
+                      >
+                        <SparkleIcon
+                          filled={myEncouraged}
+                          className={`w-5 h-5 transition-colors ${
+                            myEncouraged ? 'text-rose-dark' : 'text-ink-light/55'
+                          } ${recentlyAnimated.has(post.id) ? 'animate-encourage-pop' : ''}`}
+                        />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
-              <h3 className="text-sm font-semibold text-ink mb-1" style={{ fontFamily: "'ZCOOL XiaoWei', serif" }}>{post.title}</h3>
-              <p className="text-sm text-ink-light leading-relaxed whitespace-pre-wrap">{post.content}</p>
-              {post.link && (
-                <a
-                  href={post.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 mt-2 text-xs text-lavender hover:text-lavender-light transition-colors"
-                >
-                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                  </svg>
-                  查看链接
-                </a>
-              )}
-            </div>
-          ))
+            )
+          })
         )}
       </div>
 
@@ -203,6 +279,12 @@ export default function SquarePage() {
               {error && <p className="text-xs text-rose-dark">{error}</p>}
             </form>
           )}
+        </div>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-ink/90 text-paper px-4 py-2 rounded-full text-sm shadow-lg z-50 animate-in">
+          {toast}
         </div>
       )}
     </div>

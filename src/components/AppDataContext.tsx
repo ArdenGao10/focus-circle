@@ -35,12 +35,18 @@ interface DailyTask {
 
 export interface SquarePost {
   id: string
+  user_id: string
   title: string
   content: string
   link: string | null
   created_at: string
   nickname: string
   goal: string
+}
+
+export interface PostEncouragement {
+  post_id: string
+  user_id: string
 }
 
 interface HistorySession {
@@ -74,6 +80,9 @@ interface AppData {
   squarePosts: SquarePost[] | null
   loadSquarePosts: (force?: boolean) => Promise<void>
   setSquarePosts: React.Dispatch<React.SetStateAction<SquarePost[] | null>>
+  // Post encouragements (RLS-scoped: own + on own posts)
+  postEncouragements: PostEncouragement[]
+  encouragePost: (postId: string) => Promise<{ ok: boolean; error?: string }>
   // Profile history cache
   profileHistory: HistorySession[] | null
   loadProfileHistory: (force?: boolean) => Promise<void>
@@ -96,6 +105,8 @@ const AppDataContext = createContext<AppData>({
   squarePosts: null,
   loadSquarePosts: async () => {},
   setSquarePosts: () => {},
+  postEncouragements: [],
+  encouragePost: async () => ({ ok: false }),
   profileHistory: null,
   loadProfileHistory: async () => {},
   activeTimers: [],
@@ -137,6 +148,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([])
   const [pendingCount, setPendingCount] = useState(0)
   const [squarePosts, setSquarePosts] = useState<SquarePost[] | null>(null)
+  const [postEncouragements, setPostEncouragements] = useState<PostEncouragement[]>([])
   const [profileHistory, setProfileHistory] = useState<HistorySession[] | null>(null)
   const [activeTimers, setActiveTimers] = useState<ActiveTimer[]>([])
   const squareLoadedAtRef = useRef(0)
@@ -144,6 +156,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   const initRef = useRef(false)
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const channelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
+  const encChannelRef = useRef<ReturnType<ReturnType<typeof createClient>['channel']> | null>(null)
 
   const fetchLeaderboard = useCallback(async () => {
     const supabase = createClient()
@@ -217,6 +230,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       const enriched: SquarePost[] = data.map((p: { id: string; title: string; content: string; link: string | null; created_at: string; user_id: string }) => ({
         id: p.id,
+        user_id: p.user_id,
         title: p.title,
         content: p.content,
         link: p.link,
@@ -227,8 +241,37 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       setSquarePosts(enriched)
       squareLoadedAtRef.current = Date.now()
+
+      // Load encouragements visible to this user (RLS scopes to own + on own posts)
+      const { data: encData } = await supabase
+        .from('post_encouragements')
+        .select('post_id, user_id')
+      if (encData) setPostEncouragements(encData as PostEncouragement[])
     }
   }, [userId, squarePosts])
+
+  const encouragePost = useCallback(async (postId: string): Promise<{ ok: boolean; error?: string }> => {
+    if (!userId) return { ok: false, error: '未登录' }
+    const optimistic: PostEncouragement = { post_id: postId, user_id: userId }
+    let alreadyExists = false
+    setPostEncouragements(prev => {
+      if (prev.some(e => e.post_id === postId && e.user_id === userId)) {
+        alreadyExists = true
+        return prev
+      }
+      return [...prev, optimistic]
+    })
+    if (alreadyExists) return { ok: true }
+    const supabase = createClient()
+    const { error } = await supabase
+      .from('post_encouragements')
+      .insert({ post_id: postId, user_id: userId })
+    if (error) {
+      setPostEncouragements(prev => prev.filter(e => !(e.post_id === postId && e.user_id === userId)))
+      return { ok: false, error: error.message }
+    }
+    return { ok: true }
+  }, [userId])
 
   const loadProfileHistoryFn = useCallback(async (force = false) => {
     if (!userId) return
@@ -332,6 +375,24 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
       channelRef.current = channel
 
+      // Subscribe to encouragements (RLS auto-filters to own + on own posts)
+      const encChannel = supabase
+        .channel('post_encouragements_changes')
+        .on('postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'post_encouragements' },
+          (payload: { new: Record<string, unknown> }) => {
+            const row = payload.new as unknown as PostEncouragement
+            setPostEncouragements(prev => (
+              prev.some(e => e.post_id === row.post_id && e.user_id === row.user_id)
+                ? prev
+                : [...prev, { post_id: row.post_id, user_id: row.user_id }]
+            ))
+          }
+        )
+        .subscribe()
+
+      encChannelRef.current = encChannel
+
       // Auto-retry pending sessions
       const pending = getPendingSessions()
       setPendingCount(pending.length)
@@ -346,6 +407,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
       if (channelRef.current) channelRef.current.unsubscribe()
+      if (encChannelRef.current) encChannelRef.current.unsubscribe()
     }
   }, [fetchLeaderboard, retryPendingSessions])
 
@@ -365,6 +427,8 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       squarePosts,
       loadSquarePosts: loadSquarePostsFn,
       setSquarePosts,
+      postEncouragements,
+      encouragePost,
       profileHistory,
       loadProfileHistory: loadProfileHistoryFn,
       activeTimers,

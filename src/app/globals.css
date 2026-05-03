@@ -51,6 +51,7 @@
   --animate-halo-outer: halo-outer 7s ease-in-out infinite;
   --animate-halo-middle: halo-middle 5.5s ease-in-out infinite;
   --animate-halo-inner: halo-inner 4s ease-in-out infinite;
+  --animate-encourage-pop: encourage-pop 0.42s ease-out;
 }
 
 body {
@@ -173,6 +174,12 @@ body {
 @keyframes halo-glow {
   0%, 100% { transform: scale(0.92); opacity: 0.25; }
   50%      { transform: scale(1.08); opacity: 0.55; }
+}
+
+@keyframes encourage-pop {
+  0%   { transform: scale(0.7); }
+  60%  { transform: scale(1.28); }
+  100% { transform: scale(1); }
 }
 
 @keyframes petal-fall {
