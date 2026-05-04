@@ -84,7 +84,7 @@ interface AppData {
   squarePosts: SquarePost[] | null
   loadSquarePosts: (force?: boolean) => Promise<void>
   setSquarePosts: React.Dispatch<React.SetStateAction<SquarePost[] | null>>
-  // Post encouragements (RLS-scoped: own + on own posts)
+  // Post encouragements (readable by all; UI decides visibility)
   postEncouragements: PostEncouragement[]
   encouragePost: (postId: string) => Promise<{ ok: boolean; error?: string }>
   // Profile history cache

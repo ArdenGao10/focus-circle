@@ -28,6 +28,12 @@ function formatDuration(seconds: number): string {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
+function formatHours(seconds: number): string {
+  if (seconds <= 0) return '0'
+  const hours = seconds / 3600
+  return hours >= 10 ? hours.toFixed(0) : hours.toFixed(1)
+}
+
 function formatMinutes(mins: number): string {
   if (mins <= 0) return '0 m'
   const h = Math.floor(mins / 60)
@@ -194,11 +200,11 @@ export default function ProfilePage() {
 
   const initial = (profile?.nickname || profile?.email || '·').charAt(0).toUpperCase()
   const goalText = profile?.goal ? `正在专注 · ${profile.goal}` : '正在专注'
-  const visibleDates = historyExpanded ? dateList.slice(0, 30) : dateList.slice(0, 5)
+  const visibleDates = historyExpanded ? dateList.slice(0, 30) : dateList.slice(0, 2)
 
   const bigStats = [
     { label: '打卡天数', value: historyLoaded ? String(totalDays) : '–', unit: '天' },
-    { label: '累计时长', value: historyLoaded ? formatDuration(totalSeconds) : '–', unit: '' },
+    { label: '累计时长', value: historyLoaded ? formatHours(totalSeconds) : '–', unit: 'h' },
     { label: '日目标', value: String(targetMins), unit: '分' },
   ]
 
@@ -459,7 +465,7 @@ export default function ProfilePage() {
                   </div>
                 )
               })}
-              {dateList.length > 5 && (
+              {dateList.length > 2 && (
                 <button
                   onClick={() => setHistoryExpanded(v => !v)}
                   style={{

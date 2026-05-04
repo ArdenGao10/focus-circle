@@ -119,28 +119,23 @@ create policy "Users can delete own posts" on public.posts for delete using (aut
 create table public.post_encouragements (
   id uuid default gen_random_uuid() primary key,
   post_id uuid references public.posts(id) on delete cascade not null,
-  user_id uuid references auth.users on delete cascade not null,
+  user_id uuid references auth.users(id) on delete cascade not null,
   created_at timestamptz not null default now(),
   unique (post_id, user_id)
 );
 
+create index idx_post_encouragements_post on public.post_encouragements(post_id);
+create index idx_post_encouragements_user on public.post_encouragements(user_id);
+
 alter table public.post_encouragements enable row level security;
 
--- 仅可读：自己发出的鼓励 + 别人对自己帖子的鼓励（外人看不到任何数字）
-create policy "Read own encouragements or on own posts"
-  on public.post_encouragements for select using (
-    auth.uid() = user_id
-    or post_id in (select id from public.posts where user_id = auth.uid())
-  );
+create policy "users can read all encouragements"
+  on public.post_encouragements for select using (true);
 
--- 只能给别人帖子鼓励，user_id 必须是自己
-create policy "Users can encourage others' posts"
-  on public.post_encouragements for insert with check (
-    auth.uid() = user_id
-    and (select user_id from public.posts where id = post_id) <> auth.uid()
-  );
+create policy "users can insert their own"
+  on public.post_encouragements for insert with check (auth.uid() = user_id);
 
--- 不开放 update / delete（无策略 = 默认拒绝），避免"取消鼓励"的尴尬
+-- 不开放 update / delete（无策略 = 默认拒绝），避免"取消鼓励"
 
 -- 加入 realtime publication（让发帖人能实时收到鼓励事件）
 alter publication supabase_realtime add table public.post_encouragements;
