@@ -29,15 +29,42 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center px-6 bg-background">
+    <div
+      className="min-h-full flex items-center justify-center px-6"
+      style={{ background: 'var(--aura-bg-primary)' }}
+    >
       <div className="w-full max-w-sm">
-        <div className="bg-paper rounded-2xl border border-cream p-6 shadow-sm paper-texture">
+        <div
+          style={{
+            background: 'var(--aura-bg-elevated)',
+            borderRadius: 24,
+            border: '1px solid rgba(0,0,0,0.06)',
+            padding: 28,
+          }}
+        >
           <div className="text-center mb-6">
-            <div className="text-3xl mb-2">🌸</div>
-            <h1 className="text-2xl font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
+            <h1
+              style={{
+                fontFamily: 'var(--aura-font-serif)',
+                fontSize: 24,
+                fontWeight: 400,
+                color: 'var(--aura-text-primary)',
+                letterSpacing: '0.06em',
+              }}
+            >
               专注圈
             </h1>
-            <p className="text-ink-light text-xs mt-1">创建新账号</p>
+            <p
+              style={{
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 12,
+                color: 'var(--aura-text-muted)',
+                marginTop: 6,
+                letterSpacing: '0.1em',
+              }}
+            >
+              创建新账号
+            </p>
           </div>
 
           <form onSubmit={handleRegister} className="space-y-4">
@@ -47,8 +74,16 @@ export default function RegisterPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-sage transition-colors text-ink"
-              style={{ fontFamily: "'Noto Serif SC', serif" }}
+              className="w-full focus:outline-none"
+              style={{
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 14,
+                color: 'var(--aura-text-primary)',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid rgba(0,0,0,0.12)',
+                padding: '8px 0',
+              }}
             />
             <input
               type="password"
@@ -57,22 +92,55 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-4 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-sage transition-colors text-ink"
+              className="w-full focus:outline-none"
+              style={{
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 14,
+                color: 'var(--aura-text-primary)',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: '1px solid rgba(0,0,0,0.12)',
+                padding: '8px 0',
+              }}
             />
-            {error && <p className="text-rose-dark text-sm">{error}</p>}
+            {error && (
+              <p style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 13, color: '#B25757' }}>{error}</p>
+            )}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-sage text-paper rounded-xl font-medium disabled:opacity-50 shadow-sm active:scale-[0.98] transition-all"
-              style={{ fontFamily: 'var(--font-display)' }}
+              style={{
+                width: '100%',
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 14,
+                letterSpacing: '0.2em',
+                fontWeight: 500,
+                color: loading ? 'var(--aura-text-muted)' : 'var(--aura-text-primary)',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: `1px solid ${loading ? 'rgba(0,0,0,0.2)' : 'var(--aura-text-primary)'}`,
+                paddingBottom: 4,
+                cursor: loading ? 'not-allowed' : 'pointer',
+              }}
             >
               {loading ? '注册中...' : '注册'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-ink-light mt-5">
+          <p
+            className="text-center"
+            style={{
+              fontFamily: 'var(--aura-font-sans)',
+              fontSize: 12,
+              color: 'var(--aura-text-muted)',
+              marginTop: 20,
+            }}
+          >
             已有账号？{' '}
-            <Link href="/auth/login" className="text-sage-dark font-medium underline underline-offset-2">
+            <Link
+              href="/auth/login"
+              style={{ color: 'var(--aura-text-primary)', letterSpacing: '0.1em' }}
+            >
               登录
             </Link>
           </p>

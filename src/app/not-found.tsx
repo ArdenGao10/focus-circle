@@ -2,29 +2,70 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 bg-background">
+    <div
+      className="min-h-screen flex items-center justify-center px-6"
+      style={{ background: 'var(--aura-bg-primary)' }}
+    >
       <div className="w-full max-w-sm text-center">
-        <div className="bg-paper rounded-2xl border border-cream p-8 shadow-sm paper-texture">
-          <div className="text-5xl mb-4">🌱</div>
-          <h1 className="text-xl font-bold text-ink mb-2" style={{ fontFamily: 'var(--font-display)' }}>
+        <div
+          style={{
+            background: 'var(--aura-bg-elevated)',
+            borderRadius: 24,
+            border: '1px solid rgba(0,0,0,0.06)',
+            padding: 32,
+          }}
+        >
+          <h1
+            style={{
+              fontFamily: 'var(--aura-font-serif)',
+              fontSize: 20,
+              fontWeight: 400,
+              color: 'var(--aura-text-primary)',
+              marginBottom: 10,
+              letterSpacing: '0.04em',
+            }}
+          >
             这里好像什么都没有
           </h1>
-          <p className="text-sm text-ink-light leading-relaxed mb-6">
-            你可能点到了失效的链接，<br />
-            或者这个页面还在发芽。
+          <p
+            style={{
+              fontFamily: 'var(--aura-font-sans)',
+              fontSize: 13,
+              color: 'var(--aura-text-secondary)',
+              lineHeight: 1.7,
+              marginBottom: 28,
+            }}
+          >
+            你可能点到了失效的链接，
+            <br />
+            或者这个页面还在生成。
           </p>
-          <div className="flex gap-3 justify-center">
+          <div className="flex gap-4 justify-center">
             <Link
               href="/"
-              className="px-5 py-2.5 bg-sage text-paper rounded-xl text-sm font-medium active:scale-[0.98] transition-all"
-              style={{ fontFamily: 'var(--font-display)' }}
+              style={{
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 13,
+                letterSpacing: '0.2em',
+                color: 'var(--aura-text-primary)',
+                background: 'transparent',
+                borderBottom: '1px solid var(--aura-text-primary)',
+                paddingBottom: 4,
+              }}
             >
               去计时
             </Link>
             <Link
               href="/"
-              className="px-5 py-2.5 bg-paper border border-cream text-ink rounded-xl text-sm font-medium hover:bg-paper-warm active:scale-[0.98] transition-all"
-              style={{ fontFamily: 'var(--font-display)' }}
+              style={{
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 13,
+                letterSpacing: '0.2em',
+                color: 'var(--aura-text-muted)',
+                background: 'transparent',
+                borderBottom: '1px solid var(--aura-text-muted)',
+                paddingBottom: 4,
+              }}
             >
               回到首页
             </Link>

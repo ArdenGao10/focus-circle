@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAppData, type SquarePost } from '@/components/AppDataContext'
-import { Flower, Sprig } from '@/components/Botanicals'
+import { Sprig } from '@/components/Botanicals'
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -142,156 +142,309 @@ export default function SquarePage() {
   const todayPosted = postedThisSession || hasPostedToday
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 flex flex-col" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
-      {/* Header */}
-      <div className="relative mb-5">
-        <h1 className="text-2xl font-bold text-ink leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
-          学习广场
-        </h1>
-        <p className="text-sm text-ink-light italic mt-0.5" style={{ fontFamily: 'var(--font-script)' }}>shared by people studying alongside you</p>
-        <div className="flex items-center gap-2 mt-2">
-          <div className="flex-1 h-px bg-cream" />
-          <Flower className="w-3 h-3 text-rose opacity-50" />
-          <div className="w-8 h-px bg-cream" />
-          <Flower className="w-2 h-2 text-lavender opacity-40" />
-          <div className="flex-1 h-px bg-cream" />
+    <div style={{ background: 'var(--aura-bg-primary)', color: 'var(--aura-text-primary)' }}>
+      <div className="max-w-lg mx-auto px-4 py-8 flex flex-col" style={{ minHeight: 'calc(100vh - 3.5rem)' }}>
+        {/* Header */}
+        <div className="relative mb-5">
+          <h1
+            style={{
+              fontFamily: 'var(--aura-font-serif)',
+              fontSize: 24,
+              fontWeight: 400,
+              letterSpacing: '0.05em',
+              color: 'var(--aura-text-primary)',
+            }}
+          >
+            学习广场
+          </h1>
+          <p
+            style={{
+              fontFamily: 'var(--aura-font-sans)',
+              fontSize: 12,
+              color: 'var(--aura-text-muted)',
+              marginTop: 6,
+              letterSpacing: '0.08em',
+            }}
+          >
+            shared by people studying alongside you
+          </p>
+          <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', marginTop: 16 }} />
         </div>
-      </div>
 
-      {/* Posts list — bottom padding clears the sticky form when scrolling */}
-      <div className={`flex-1 space-y-3 ${ready && userId ? (todayPosted ? 'pb-28' : 'pb-60') : 'mb-4'}`}>
-        {posts === null ? (
-          [1, 2, 3].map(i => (
-            <div key={i} className="bg-paper rounded-xl border border-cream p-4 animate-pulse space-y-2">
-              <div className="h-3 bg-cream rounded w-1/3" />
-              <div className="h-2 bg-cream rounded w-full" />
-              <div className="h-2 bg-cream rounded w-2/3" />
+        {/* Posts list — bottom padding clears the sticky form when scrolling */}
+        <div className={`flex-1 space-y-3 ${ready && userId ? (todayPosted ? 'pb-28' : 'pb-60') : 'mb-4'}`}>
+          {posts === null ? (
+            [1, 2, 3].map(i => (
+              <div
+                key={i}
+                className="rounded-xl p-4 animate-pulse space-y-2"
+                style={{ background: 'var(--aura-bg-elevated)', border: '1px solid rgba(0,0,0,0.06)' }}
+              >
+                <div className="h-3 rounded w-1/3" style={{ background: 'rgba(0,0,0,0.08)' }} />
+                <div className="h-2 rounded w-full" style={{ background: 'rgba(0,0,0,0.06)' }} />
+                <div className="h-2 rounded w-2/3" style={{ background: 'rgba(0,0,0,0.06)' }} />
+              </div>
+            ))
+          ) : posts.length === 0 ? (
+            <div
+              className="text-center py-16"
+              style={{ background: 'var(--aura-bg-elevated)', borderRadius: 24, border: '1px solid rgba(0,0,0,0.06)' }}
+            >
+              <Sprig className="w-10 h-16 mx-auto" style={{ color: 'var(--aura-text-muted)' }} />
+              <p style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 13, color: 'var(--aura-text-secondary)' }}>还没有人分享</p>
+              <p style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 11, color: 'var(--aura-text-muted)', marginTop: 6 }}>
+                成为第一个分享资源的人吧
+              </p>
             </div>
-          ))
-        ) : posts.length === 0 ? (
-          <div className="text-center py-16 bg-paper rounded-2xl border border-cream">
-            <Sprig className="w-10 h-16 mx-auto text-sage mb-2" />
-            <p className="text-ink-light">还没有人分享</p>
-            <p className="text-xs text-ink-light/50 mt-1">成为第一个分享资源的人吧</p>
-          </div>
-        ) : (
-          posts.map(post => {
-            const isOwner = !!userId && post.user_id === userId
-            const myEncouraged = !!userId && postEncouragements.some(e => e.post_id === post.id && e.user_id === userId)
-            const ownerCount = isOwner ? postEncouragements.filter(e => e.post_id === post.id).length : 0
-            const showFooter = !!userId && (!isOwner || (isOwner && ownerCount > 0))
-            return (
-              <div key={post.id} className="relative bg-paper rounded-xl border border-cream p-4 shadow-sm paper-texture">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-full bg-lavender text-paper flex items-center justify-center text-xs font-bold">
-                    {post.nickname.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-sm font-medium text-ink">{post.nickname}</span>
-                    <span className="text-xs px-1.5 py-0.5 bg-cream/60 text-ink-light rounded ml-1.5">{post.goal}</span>
-                  </div>
-                  <span className="text-xs text-ink-light/50 shrink-0">{timeAgo(post.created_at)}</span>
-                </div>
-                <h3 className="text-sm font-semibold text-ink mb-1" style={{ fontFamily: 'var(--font-display)' }}>{post.title}</h3>
-                <p className="text-sm text-ink-light leading-relaxed whitespace-pre-wrap">{post.content}</p>
-                {post.link && (
-                  <a
-                    href={post.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 mt-2 text-xs text-lavender hover:text-lavender-light transition-colors"
-                  >
-                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-                    </svg>
-                    查看链接
-                  </a>
-                )}
-                {showFooter && (
-                  <div className="flex items-center justify-end mt-3 pt-2.5 border-t border-cream/50">
-                    {isOwner ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-rose-dark/85">
-                        <SparkleIcon filled className="w-3.5 h-3.5" />
-                        {ownerCount} 人鼓励了你
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => handleEncourage(post.id)}
-                        disabled={myEncouraged}
-                        aria-label={myEncouraged ? '已鼓励' : '鼓励'}
-                        className={`p-1.5 rounded-full transition-colors ${
-                          myEncouraged
-                            ? 'cursor-default opacity-70'
-                            : 'hover:bg-rose-light/40 active:scale-95'
-                        }`}
-                      >
-                        <SparkleIcon
-                          filled={myEncouraged}
-                          className={`w-5 h-5 transition-colors ${
-                            myEncouraged ? 'text-rose-dark' : 'text-ink-light/55'
-                          } ${recentlyAnimated.has(post.id) ? 'animate-encourage-pop' : ''}`}
-                        />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })
-        )}
-      </div>
-
-      {/* Post form — fixed at bottom */}
-      {ready && userId && (
-        <div className="sticky bottom-16 bg-paper rounded-2xl border border-cream p-4 shadow-md paper-texture">
-          {todayPosted ? (
-            <p className="text-center text-sm text-ink-light py-2">今日已发布，明天再来吧 🌸</p>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-2.5">
-              <input
-                type="text"
-                placeholder="分享标题"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                className="w-full text-sm px-3 py-2 bg-paper-warm border border-cream rounded-lg focus:outline-none focus:border-lavender transition-colors"
-                style={{ fontFamily: "'Noto Serif SC', serif" }}
-              />
-              <textarea
-                placeholder="写下你想分享的内容..."
-                value={content}
-                onChange={e => setContent(e.target.value)}
-                rows={2}
-                className="w-full text-sm px-3 py-2 bg-paper-warm border border-cream rounded-lg focus:outline-none focus:border-lavender resize-none transition-colors"
-                style={{ fontFamily: "'Noto Serif SC', serif" }}
-              />
-              <div className="flex gap-2">
-                <input
-                  type="url"
-                  placeholder="链接（选填）"
-                  value={link}
-                  onChange={e => setLink(e.target.value)}
-                  className="flex-1 text-sm px-3 py-2 bg-paper-warm border border-cream rounded-lg focus:outline-none focus:border-lavender transition-colors"
-                />
-                <button
-                  type="submit"
-                  disabled={submitting || !title.trim() || !content.trim()}
-                  className="px-4 py-2 bg-lavender text-paper rounded-lg text-sm font-medium disabled:opacity-30 active:scale-95 transition-all"
+            posts.map(post => {
+              const isOwner = !!userId && post.user_id === userId
+              const myEncouraged = !!userId && postEncouragements.some(e => e.post_id === post.id && e.user_id === userId)
+              const ownerCount = isOwner ? postEncouragements.filter(e => e.post_id === post.id).length : 0
+              const showFooter = !!userId && (!isOwner || (isOwner && ownerCount > 0))
+              return (
+                <div
+                  key={post.id}
+                  style={{
+                    position: 'relative',
+                    background: 'var(--aura-bg-elevated)',
+                    borderRadius: 18,
+                    border: '1px solid rgba(0,0,0,0.06)',
+                    padding: 16,
+                  }}
                 >
-                  {submitting ? '发布中...' : '发布'}
-                </button>
-              </div>
-              {error && <p className="text-xs text-rose-dark">{error}</p>}
-            </form>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div
+                      className="w-7 h-7 rounded-full flex items-center justify-center"
+                      style={{
+                        fontFamily: 'var(--aura-font-sans)',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        color: 'var(--aura-text-primary)',
+                        border: '1px solid rgba(0,0,0,0.12)',
+                        background: 'rgba(0,0,0,0.04)',
+                      }}
+                    >
+                      {post.nickname.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 13, color: 'var(--aura-text-primary)' }}>
+                        {post.nickname}
+                      </span>
+                      <span
+                        style={{
+                          fontFamily: 'var(--aura-font-mono)',
+                          fontSize: 10,
+                          color: 'var(--aura-text-muted)',
+                          border: '1px solid rgba(0,0,0,0.08)',
+                          borderRadius: 999,
+                          padding: '2px 6px',
+                          marginLeft: 8,
+                        }}
+                      >
+                        {post.goal}
+                      </span>
+                    </div>
+                    <span style={{ fontFamily: 'var(--aura-font-mono)', fontSize: 10, color: 'var(--aura-text-muted)' }}>
+                      {timeAgo(post.created_at)}
+                    </span>
+                  </div>
+                  <h3
+                    style={{
+                      fontFamily: 'var(--aura-font-serif)',
+                      fontSize: 15,
+                      fontWeight: 500,
+                      color: 'var(--aura-text-primary)',
+                      marginBottom: 6,
+                    }}
+                  >
+                    {post.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: 'var(--aura-font-sans)',
+                      fontSize: 13,
+                      color: 'var(--aura-text-secondary)',
+                      lineHeight: 1.7,
+                      whiteSpace: 'pre-wrap',
+                    }}
+                  >
+                    {post.content}
+                  </p>
+                  {post.link && (
+                    <a
+                      href={post.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-2"
+                      style={{
+                        fontFamily: 'var(--aura-font-sans)',
+                        fontSize: 12,
+                        color: 'var(--aura-text-secondary)',
+                      }}
+                    >
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                      </svg>
+                      查看链接
+                    </a>
+                  )}
+                  {showFooter && (
+                    <div
+                      className="flex items-center justify-end mt-3"
+                      style={{ paddingTop: 10, borderTop: '1px solid rgba(0,0,0,0.06)' }}
+                    >
+                      {isOwner ? (
+                        <span
+                          className="inline-flex items-center gap-1"
+                          style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 12, color: 'var(--aura-text-secondary)' }}
+                        >
+                          <SparkleIcon filled className="w-3.5 h-3.5" />
+                          {ownerCount} 人鼓励了你
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleEncourage(post.id)}
+                          disabled={myEncouraged}
+                          aria-label={myEncouraged ? '已鼓励' : '鼓励'}
+                          className="p-1.5 rounded-full"
+                          style={{
+                            cursor: myEncouraged ? 'default' : 'pointer',
+                            opacity: myEncouraged ? 0.6 : 1,
+                            background: myEncouraged ? 'transparent' : 'rgba(0,0,0,0.04)',
+                          }}
+                        >
+                          <SparkleIcon
+                            filled={myEncouraged}
+                            className={`w-5 h-5 ${recentlyAnimated.has(post.id) ? 'animate-encourage-pop' : ''}`}
+                            style={{ color: myEncouraged ? 'var(--aura-text-primary)' : 'var(--aura-text-muted)' }}
+                          />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })
           )}
         </div>
-      )}
 
-      {toast && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-ink/90 text-paper px-4 py-2 rounded-full text-sm shadow-lg z-50 animate-in">
-          {toast}
-        </div>
-      )}
+        {/* Post form — fixed at bottom */}
+        {ready && userId && (
+          <div
+            className="sticky bottom-16"
+            style={{
+              background: 'var(--aura-bg-elevated)',
+              borderRadius: 24,
+              border: '1px solid rgba(0,0,0,0.06)',
+              padding: 16,
+            }}
+          >
+            {todayPosted ? (
+              <p
+                className="text-center"
+                style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 13, color: 'var(--aura-text-muted)', padding: '6px 0' }}
+              >
+                今日已发布，明天再来吧
+              </p>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-2.5">
+                <input
+                  type="text"
+                  placeholder="分享标题"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className="w-full focus:outline-none"
+                  style={{
+                    fontFamily: 'var(--aura-font-sans)',
+                    fontSize: 14,
+                    color: 'var(--aura-text-primary)',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(0,0,0,0.12)',
+                    padding: '8px 0',
+                  }}
+                />
+                <textarea
+                  placeholder="写下你想分享的内容..."
+                  value={content}
+                  onChange={e => setContent(e.target.value)}
+                  rows={2}
+                  className="w-full focus:outline-none resize-none"
+                  style={{
+                    fontFamily: 'var(--aura-font-sans)',
+                    fontSize: 13,
+                    color: 'var(--aura-text-primary)',
+                    background: 'transparent',
+                    border: '1px solid rgba(0,0,0,0.08)',
+                    borderRadius: 12,
+                    padding: '10px 12px',
+                  }}
+                />
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="链接（选填）"
+                    value={link}
+                    onChange={e => setLink(e.target.value)}
+                    className="flex-1 focus:outline-none"
+                    style={{
+                      fontFamily: 'var(--aura-font-sans)',
+                      fontSize: 13,
+                      color: 'var(--aura-text-primary)',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: '1px solid rgba(0,0,0,0.12)',
+                      padding: '8px 0',
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    disabled={submitting || !title.trim() || !content.trim()}
+                    style={{
+                      fontFamily: 'var(--aura-font-sans)',
+                      fontSize: 13,
+                      letterSpacing: '0.2em',
+                      fontWeight: 500,
+                      color: submitting || !title.trim() || !content.trim()
+                        ? 'var(--aura-text-muted)'
+                        : 'var(--aura-text-primary)',
+                      background: 'transparent',
+                      border: 'none',
+                      borderBottom: `1px solid ${submitting || !title.trim() || !content.trim()
+                        ? 'rgba(0,0,0,0.2)'
+                        : 'var(--aura-text-primary)'}`,
+                      paddingBottom: 4,
+                      cursor: submitting || !title.trim() || !content.trim() ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {submitting ? '发布中...' : '发布'}
+                  </button>
+                </div>
+                {error && <p style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 12, color: '#B25757' }}>{error}</p>}
+              </form>
+            )}
+          </div>
+        )}
+
+        {toast && (
+          <div
+            className="fixed bottom-24 left-1/2 -translate-x-1/2"
+            style={{
+              background: 'rgba(0,0,0,0.7)',
+              color: '#fff',
+              padding: '8px 16px',
+              borderRadius: 999,
+              fontFamily: 'var(--aura-font-sans)',
+              fontSize: 12,
+              zIndex: 50,
+            }}
+          >
+            {toast}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

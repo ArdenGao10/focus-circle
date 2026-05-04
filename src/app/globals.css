@@ -1,30 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  /* Surfaces — bg darker so paper cards visibly lift */
-  --background: #f1ebe0;
-  --foreground: #2a241e;
-  --paper: #ffffff;
-  --paper-warm: #f5ede0;
-  --cream: #e8dcc4;
+  /* Surfaces — align legacy tokens with Aura system */
+  --background: #FBFBFB;
+  --foreground: #1A1A1A;
+  --paper: #FFFFFF;
+  --paper-warm: #FAFAFA;
+  --cream: #EDEDED;
 
-  /* Text — AA-compliant against #ffffff (ink 14.8:1, ink-light 6.5:1) */
-  --ink: #2a241e;
-  --ink-light: #6b5e52;
+  /* Text — align legacy tokens with Aura system */
+  --ink: #1A1A1A;
+  --ink-light: #6B6B6B;
 
-  /* Accents — saturation +10~25% so CTA / links read as actionable */
-  --sage: #8ea285;
-  --sage-light: #cad8c2;
-  --sage-dark: #5a7a4f;
-  --rose: #cf8e85;
-  --rose-light: #f0d0c8;
-  --rose-dark: #a16560;
-  --lavender: #9d8bb6;
-  --lavender-light: #d8c8e8;
-  --butter: #e0c980;
-  --butter-light: #f0e3b8;
-  --terracotta: #b87e48;
-  --terracotta-light: #ecd0b0;
+  /* Accents — softened to match Aura palette */
+  --sage: #5C8A70;
+  --sage-light: #DCE7E0;
+  --sage-dark: #496F5B;
+  --rose: #C78C84;
+  --rose-light: #F1D6D2;
+  --rose-dark: #A36B64;
+  --lavender: #8D83A6;
+  --lavender-light: #DDD7EA;
+  --butter: #D9C088;
+  --butter-light: #F1E7C8;
+  --terracotta: #B98758;
+  --terracotta-light: #E7D2B7;
 
   /* Typography cascades — display = bold transitional serif (Latin) +
      system Chinese serif/sans fallback. script = handwritten italic accent. */
@@ -247,8 +247,8 @@ body {
    layer arrives in next pass once layout is approved).
    ───────────────────────────────────────────────────────────── */
 @keyframes aura-breathe {
-  0%, 100% { transform: translate(-50%, -50%) scale(1);    opacity: 0.92; }
-  50%      { transform: translate(-50%, -50%) scale(1.03); opacity: 1;    }
+  0%, 100% { transform: scale(1);    opacity: 0.92; }
+  50%      { transform: scale(1.03); opacity: 1;    }
 }
 .aura-breathe {
   animation: aura-breathe 6s ease-in-out infinite;

@@ -1,15 +1,16 @@
 'use client'
 
 import { useTimer } from './TimerContext'
-import { Flower, Leaf } from './Botanicals'
+function formatDuration(seconds: number): { hours: number; minutes: number; seconds: number } {
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = Math.floor(seconds % 60)
+  return { hours, minutes, seconds: secs }
+}
 
-function formatDuration(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0) return `${h}小时${m > 0 ? m + '分钟' : ''}`
-  if (m > 0) return `${m}分钟${s > 0 ? s + '秒' : ''}`
-  return `${s}秒`
+function formatDateLabel(dateStr?: string | null): string {
+  if (!dateStr) return new Date().toISOString().split('T')[0]
+  return dateStr
 }
 
 export default function SessionSummary() {
@@ -17,42 +18,111 @@ export default function SessionSummary() {
 
   if (!lastSession) return null
 
+  const { hours, minutes, seconds } = formatDuration(lastSession.duration_seconds)
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/20 backdrop-blur-sm px-6">
-      <div className="relative bg-paper rounded-2xl p-6 w-full max-w-sm shadow-xl border border-cream animate-in paper-texture overflow-hidden">
-        {/* Decorative elements */}
-        <Leaf className="absolute top-2 right-3 w-8 h-12 text-sage-dark animate-sway" />
-        <Flower className="absolute bottom-4 left-4 w-10 h-10 text-rose opacity-40" />
+    <div
+      className="fixed inset-0 z-50"
+      style={{ background: 'var(--aura-bg-primary)' }}
+    >
+      <div
+        style={{
+          minHeight: '100vh',
+          background: 'var(--aura-bg-primary)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '0 32px',
+          textAlign: 'center',
+        }}
+      >
+        <div
+          aria-hidden="true"
+          style={{
+            width: 240,
+            height: 240,
+            background: 'radial-gradient(circle, rgba(168, 213, 186, 0.4) 0%, rgba(168, 213, 186, 0.15) 50%, transparent 90%)',
+            filter: 'blur(30px)',
+            marginBottom: 60,
+          }}
+        />
 
-        {/* Washi tape */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-3 bg-sage-light opacity-50 -translate-y-1 rounded-b-sm" />
+        <h1
+          style={{
+            fontFamily: 'var(--aura-font-serif)',
+            fontSize: 36,
+            fontWeight: 300,
+            color: 'var(--aura-text-primary)',
+            letterSpacing: '0.05em',
+            marginBottom: 12,
+          }}
+        >
+          专注完成
+        </h1>
 
-        <div className="text-center mb-5 pt-2">
-          <div className="text-3xl mb-2">🌸</div>
-          <h2 className="text-lg font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
-            专注完成
-          </h2>
-          <p className="text-ink-light text-xs mt-0.5">又一次认真的时光</p>
+        <p
+          style={{
+            fontFamily: 'var(--aura-font-sans)',
+            fontSize: 14,
+            color: 'var(--aura-text-muted)',
+            letterSpacing: '0.1em',
+            marginBottom: 64,
+          }}
+        >
+          又一次认真的时光
+        </p>
+
+        <div
+          style={{
+            fontFamily: 'var(--aura-font-serif)',
+            fontSize: 56,
+            fontWeight: 300,
+            color: 'var(--aura-text-primary)',
+            marginBottom: 16,
+            fontVariantNumeric: 'tabular-nums lining-nums',
+          }}
+        >
+          {hours > 0 && (
+            <>
+              {hours}
+              <span style={{ fontSize: 24, margin: '0 12px 0 4px', color: 'var(--aura-text-secondary)' }}>时</span>
+            </>
+          )}
+          {minutes}
+          <span style={{ fontSize: 24, margin: '0 12px 0 4px', color: 'var(--aura-text-secondary)' }}>分</span>
+          {seconds.toString().padStart(2, '0')}
+          <span style={{ fontSize: 24, marginLeft: 4, color: 'var(--aura-text-secondary)' }}>秒</span>
         </div>
 
-        <div className="bg-paper-warm rounded-xl p-4 mb-5 border border-cream">
-          <div className="text-center">
-            <div className="text-3xl font-bold text-ink" style={{ fontFamily: "'Noto Serif SC', serif" }}>
-              {formatDuration(lastSession.duration_seconds)}
-            </div>
-            {lastSession.taskName && (
-              <div className="text-sm text-sage-dark mt-1 italic">{lastSession.taskName}</div>
-            )}
-            <div className="text-xs text-ink-light mt-1">{lastSession.date}</div>
-          </div>
+        <div
+          style={{
+            fontFamily: 'var(--aura-font-mono)',
+            fontSize: 12,
+            color: 'var(--aura-text-muted)',
+            letterSpacing: '0.1em',
+            marginBottom: 80,
+          }}
+        >
+          个人专注 · {formatDateLabel(lastSession.date)}
         </div>
 
         <button
           onClick={clearLastSession}
-          className="w-full py-3 bg-sage text-paper rounded-xl font-medium active:scale-[0.98] transition-transform"
-          style={{ fontFamily: 'var(--font-display)' }}
+          style={{
+            fontFamily: 'var(--aura-font-sans)',
+            fontSize: 14,
+            letterSpacing: '0.2em',
+            fontWeight: 500,
+            color: 'var(--aura-text-primary)',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: '1px solid var(--aura-text-primary)',
+            paddingBottom: 4,
+            cursor: 'pointer',
+          }}
         >
-          继续加油
+          继续
         </button>
       </div>
     </div>

@@ -195,23 +195,30 @@ export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITask
                 value={goal}
                 onChange={e => setGoal(e.target.value)}
                 placeholder={placeholder}
-                rows={3}
+                rows={1}
                 disabled={loading}
+                onInput={(e) => {
+                  const el = e.currentTarget
+                  el.style.height = 'auto'
+                  el.style.height = `${el.scrollHeight}px`
+                }}
                 onFocus={(e) => { e.currentTarget.style.borderBottomColor = 'var(--aura-text-primary)' }}
                 onBlur={(e) => { e.currentTarget.style.borderBottomColor = '#E5E5E5' }}
                 style={{
                   width: '100%',
-                  minHeight: 100,
+                  minHeight: 40,
                   background: 'transparent',
                   border: 'none',
                   borderBottom: '1px solid #E5E5E5',
-                  padding: '12px 0',
+                  padding: '8px 0',
                   fontFamily: 'var(--aura-font-sans)',
                   fontSize: 15,
                   color: 'var(--aura-text-primary)',
                   resize: 'none',
                   outline: 'none',
-                  marginBottom: 32,
+                  marginBottom: 40,
+                  lineHeight: 1.6,
+                  overflow: 'hidden',
                   transition: 'border-color 0.2s ease',
                 }}
               />

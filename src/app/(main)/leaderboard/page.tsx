@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAppData, type ActiveTimer } from '@/components/AppDataContext'
-import { Sprig, Flower } from '@/components/Botanicals'
+import { Sprig } from '@/components/Botanicals'
 
 function formatHMS(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -20,25 +20,26 @@ function activeTimerElapsed(timer: ActiveTimer): number {
   return Math.max(0, Math.floor(ms / 1000))
 }
 
-const RANK_COLORS = [
-  'bg-butter text-terracotta border-butter',
-  'bg-sage-light text-sage-dark border-sage-light',
-  'bg-rose-light text-rose-dark border-rose-light',
-]
-
 const RANK_ICONS = ['🌸', '🌿', '🍃']
 
 function SkeletonCard() {
   return (
-    <div className="p-3.5 rounded-xl bg-paper border border-cream">
+    <div
+      style={{
+        padding: 14,
+        borderRadius: 18,
+        background: 'var(--aura-bg-elevated)',
+        border: '1px solid rgba(0,0,0,0.06)',
+      }}
+    >
       <div className="flex items-center gap-3">
-        <div className="w-7 h-4 bg-cream rounded animate-pulse" />
-        <div className="w-9 h-9 rounded-full bg-cream animate-pulse" />
+        <div className="w-7 h-4 rounded animate-pulse" style={{ background: 'rgba(0,0,0,0.08)' }} />
+        <div className="w-9 h-9 rounded-full animate-pulse" style={{ background: 'rgba(0,0,0,0.08)' }} />
         <div className="flex-1 space-y-2">
-          <div className="h-3 bg-cream rounded w-2/3 animate-pulse" />
-          <div className="h-1.5 bg-cream rounded-full animate-pulse" />
+          <div className="h-3 rounded w-2/3 animate-pulse" style={{ background: 'rgba(0,0,0,0.08)' }} />
+          <div className="h-1.5 rounded-full animate-pulse" style={{ background: 'rgba(0,0,0,0.06)' }} />
         </div>
-        <div className="w-16 h-4 bg-cream rounded animate-pulse" />
+        <div className="w-16 h-4 rounded animate-pulse" style={{ background: 'rgba(0,0,0,0.08)' }} />
       </div>
     </div>
   )
@@ -80,51 +81,79 @@ export default function LeaderboardPage() {
     : sorted
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
-      {/* Header */}
-      <div className="relative mb-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-ink leading-tight" style={{ fontFamily: 'var(--font-display)' }}>
-              排行榜
-            </h1>
-            <p className="text-sm text-ink-light italic mt-0.5" style={{ fontFamily: 'var(--font-script)' }}>where everyone shows up today</p>
+    <div style={{ background: 'var(--aura-bg-primary)', color: 'var(--aura-text-primary)' }}>
+      <div className="max-w-lg mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="relative mb-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1
+                style={{
+                  fontFamily: 'var(--aura-font-serif)',
+                  fontSize: 24,
+                  fontWeight: 400,
+                  letterSpacing: '0.05em',
+                  color: 'var(--aura-text-primary)',
+                }}
+              >
+                排行榜
+              </h1>
+              <p
+                style={{
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 12,
+                  color: 'var(--aura-text-muted)',
+                  marginTop: 6,
+                  letterSpacing: '0.08em',
+                }}
+              >
+                everyone shows up today
+              </p>
+            </div>
+            {myGoal && (
+              <button
+                onClick={() => setFilterGoal(!filterGoal)}
+                style={{
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 12,
+                  letterSpacing: '0.12em',
+                  color: filterGoal ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                  background: filterGoal ? 'rgba(0,0,0,0.04)' : 'transparent',
+                  border: `1px solid ${filterGoal ? 'var(--aura-text-primary)' : 'rgba(0,0,0,0.12)'}`,
+                  borderRadius: 999,
+                  padding: '6px 12px',
+                  cursor: 'pointer',
+                }}
+              >
+                同目标
+              </button>
+            )}
           </div>
-          {myGoal && (
-            <button
-              onClick={() => setFilterGoal(!filterGoal)}
-              className={`text-sm px-4 py-1.5 rounded-full border transition-all active:scale-95 ${
-                filterGoal
-                  ? 'bg-sage text-paper border-sage'
-                  : 'border-sage-light text-ink-light hover:border-sage'
-              }`}
-            >
-              同目标
-            </button>
-          )}
+          <div style={{ height: 1, background: 'rgba(0,0,0,0.06)', marginTop: 16 }} />
         </div>
-        <div className="flex items-center gap-2 mt-2">
-          <div className="flex-1 h-px bg-cream" />
-          <Flower className="w-3 h-3 text-rose opacity-50" />
-          <div className="w-8 h-px bg-cream" />
-          <Flower className="w-2 h-2 text-sage opacity-40" />
-          <div className="flex-1 h-px bg-cream" />
-        </div>
-      </div>
 
-      {!ready ? (
-        <div className="space-y-2.5">
-          {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16 bg-paper rounded-2xl border border-cream">
-          <Sprig className="w-10 h-16 mx-auto text-sage mb-2" />
-          <p className="text-ink-light">暂无数据</p>
-          <p className="text-xs text-ink-light/50 mt-1">开始专注后将出现在排行榜</p>
-        </div>
-      ) : (
-        <div className="space-y-2.5">
-          {filtered.map((entry, i) => {
+        {!ready ? (
+          <div className="space-y-2.5">
+            {[1, 2, 3, 4, 5].map(i => <SkeletonCard key={i} />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div
+            className="text-center py-14"
+            style={{
+              background: 'var(--aura-bg-elevated)',
+              borderRadius: 24,
+              border: '1px solid rgba(0,0,0,0.06)',
+            }}
+          >
+            <Sprig className="w-10 h-16 mx-auto" style={{ color: 'var(--aura-text-muted)' }} />
+            <p style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 13, color: 'var(--aura-text-secondary)' }}>暂无数据</p>
+            <p style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 11, color: 'var(--aura-text-muted)', marginTop: 6 }}>
+              开始专注后将出现在排行榜
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {filtered.map((entry, i) => {
             const targetMins = entry.target_minutes || 120
             const progress = Math.min((entry.today_seconds / (targetMins * 60)) * 100, 100)
             const isMe = entry.id === userId
@@ -134,78 +163,141 @@ export default function LeaderboardPage() {
             return (
               <div
                 key={entry.id}
-                className={`relative p-3.5 rounded-xl transition-all paper-texture ${
-                  isMe
-                    ? 'bg-butter-light border-2 border-butter shadow-sm'
-                    : 'bg-paper border border-cream hover:shadow-sm'
-                }`}
+                style={{
+                  position: 'relative',
+                  padding: 14,
+                  borderRadius: 18,
+                  border: `1px solid ${isMe ? 'rgba(0,0,0,0.18)' : 'rgba(0,0,0,0.08)'}`,
+                  background: isMe ? 'rgba(0,0,0,0.03)' : 'var(--aura-bg-elevated)',
+                }}
               >
-                {isTop3 && (
-                  <div className={`absolute -top-1.5 left-6 w-12 h-2.5 rounded-sm opacity-50 ${
-                    i === 0 ? 'bg-butter rotate-[-2deg]' : i === 1 ? 'bg-sage-light rotate-[1deg]' : 'bg-rose-light rotate-[-1deg]'
-                  }`} />
-                )}
-
                 <div className="flex items-center gap-3">
                   <div className="w-7 text-center shrink-0">
                     {isTop3 ? (
                       <span className="text-base">{RANK_ICONS[i]}</span>
                     ) : (
-                      <span className="text-xs font-bold text-ink-light/40">{i + 1}</span>
+                      <span style={{ fontFamily: 'var(--aura-font-mono)', fontSize: 11, color: 'var(--aura-text-muted)' }}>{i + 1}</span>
                     )}
                   </div>
 
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 border relative ${
-                    isTop3 ? RANK_COLORS[i] : 'bg-paper-warm text-ink-light border-cream'
-                  }`}>
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 relative"
+                    style={{
+                      fontFamily: 'var(--aura-font-sans)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: 'var(--aura-text-primary)',
+                      border: '1px solid rgba(0,0,0,0.12)',
+                      background: isTop3 ? 'rgba(0,0,0,0.04)' : 'transparent',
+                    }}
+                  >
                     {entry.nickname.charAt(0)}
                     {isActive && (
-                      <span className="absolute w-2.5 h-2.5 bg-sage rounded-full border-2 border-paper -bottom-0.5 -right-0.5 animate-pulse" />
+                      <span
+                        className="absolute"
+                        style={{
+                          width: 6,
+                          height: 6,
+                          borderRadius: '50%',
+                          background: 'var(--aura-green-solid)',
+                          bottom: -2,
+                          right: -2,
+                        }}
+                      />
                     )}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-1">
-                      <span className={`text-sm truncate ${isMe ? 'font-bold text-terracotta' : 'font-medium text-ink'}`}>
+                      <span
+                        className="truncate"
+                        style={{
+                          fontFamily: 'var(--aura-font-sans)',
+                          fontSize: 14,
+                          fontWeight: isMe ? 600 : 500,
+                          color: isMe ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                        }}
+                      >
                         {entry.nickname}
-                        {isMe && <span className="text-xs text-terracotta/60 ml-1">(我)</span>}
+                        {isMe && (
+                          <span style={{ fontSize: 11, color: 'var(--aura-text-muted)', marginLeft: 6 }}>(我)</span>
+                        )}
                       </span>
-                      <span className="text-xs px-1.5 py-0.5 bg-cream/60 text-ink-light rounded shrink-0">
+                      <span
+                        style={{
+                          fontFamily: 'var(--aura-font-mono)',
+                          fontSize: 10,
+                          color: 'var(--aura-text-muted)',
+                          border: '1px solid rgba(0,0,0,0.08)',
+                          borderRadius: 999,
+                          padding: '2px 6px',
+                        }}
+                      >
                         {entry.goal}
                       </span>
                     </div>
 
                     {isActive && entry._taskText && (
-                      <div className="text-xs text-sage-dark mb-1 truncate italic">{entry._taskText}</div>
+                      <div
+                        className="truncate"
+                        style={{
+                          fontFamily: 'var(--aura-font-sans)',
+                          fontSize: 12,
+                          color: 'var(--aura-text-secondary)',
+                          marginBottom: 6,
+                        }}
+                      >
+                        {entry._taskText}
+                      </div>
                     )}
 
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 h-1.5 bg-cream rounded-full overflow-hidden">
+                      <div className="flex-1" style={{ height: 6, background: 'rgba(0,0,0,0.06)', borderRadius: 999 }}>
                         <div
-                          className={`h-full rounded-full transition-all duration-700 ${
-                            progress >= 100 ? 'bg-sage' : progress >= 50 ? 'bg-terracotta' : 'bg-rose'
-                          }`}
-                          style={{ width: `${progress}%` }}
+                          style={{
+                            height: '100%',
+                            width: `${progress}%`,
+                            borderRadius: 999,
+                            background: progress >= 100 ? 'var(--aura-green-solid)' : 'var(--aura-warm-solid)',
+                            transition: 'width 0.6s ease',
+                          }}
                         />
                       </div>
-                      <span className="text-xs text-ink-light/50 shrink-0 font-numeric w-8 text-right">
+                      <span
+                        style={{
+                          fontFamily: 'var(--aura-font-mono)',
+                          fontSize: 11,
+                          color: 'var(--aura-text-muted)',
+                          width: 36,
+                          textAlign: 'right',
+                        }}
+                      >
                         {Math.round(progress)}%
                       </span>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0 pl-1">
-                    <div className={`text-sm font-bold font-numeric ${isActive ? 'text-sage-dark' : 'text-ink'}`}>
+                    <div
+                      style={{
+                        fontFamily: 'var(--aura-font-mono)',
+                        fontSize: 13,
+                        color: isActive ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                      }}
+                    >
                       {formatHMS(entry.today_seconds)}
                     </div>
-                    <div className="text-xs text-ink-light/50">{entry.total_days}天</div>
+                    <div style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 11, color: 'var(--aura-text-muted)' }}>
+                      {entry.total_days}天
+                    </div>
                   </div>
                 </div>
               </div>
             )
           })}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }

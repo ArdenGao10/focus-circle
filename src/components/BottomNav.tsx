@@ -49,7 +49,7 @@ export default function BottomNav() {
               <span
                 style={{
                   fontFamily: active ? 'var(--aura-font-serif)' : 'var(--aura-font-sans)',
-                  fontSize: active ? 15 : 13,
+                  fontSize: active ? 14 : 13,
                   fontWeight: 400,
                   color: active ? 'var(--aura-text-primary)' : 'var(--aura-text-muted)',
                   letterSpacing: '0.05em',

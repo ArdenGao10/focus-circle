@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Leaf, Flower } from '@/components/Botanicals'
 
 const PRESET_GOALS = ['备考雅思', '考研备考', '学习编程', '健身打卡', '读书计划']
 const TARGET_OPTIONS = [30, 60, 90, 120, 180, 240]
@@ -56,26 +55,58 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center px-6 py-10 bg-background">
-      <div className="w-full max-w-sm relative">
-        {/* Decorative */}
-        <Leaf className="absolute -top-8 -right-2 w-10 h-14 text-sage-dark animate-sway" />
-        <Flower className="absolute -top-4 left-4 w-8 h-8 text-rose opacity-40" />
-
-        <div className="bg-paper rounded-2xl border border-cream p-6 shadow-sm paper-texture">
-          {/* Washi tape */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-3 bg-sage-light opacity-50 -translate-y-1 rounded-b-sm" />
-
-          <div className="text-center mb-6 pt-2">
-            <h1 className="text-xl font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
+    <div
+      className="min-h-full flex items-center justify-center px-6 py-10"
+      style={{ background: 'var(--aura-bg-primary)' }}
+    >
+      <div className="w-full max-w-sm">
+        <div
+          style={{
+            background: 'var(--aura-bg-elevated)',
+            borderRadius: 24,
+            border: '1px solid rgba(0,0,0,0.06)',
+            padding: 28,
+          }}
+        >
+          <div className="text-center mb-6">
+            <h1
+              style={{
+                fontFamily: 'var(--aura-font-serif)',
+                fontSize: 20,
+                fontWeight: 400,
+                color: 'var(--aura-text-primary)',
+                letterSpacing: '0.04em',
+              }}
+            >
               设置你的资料
             </h1>
-            <p className="text-ink-light text-xs mt-1">让大家认识你</p>
+            <p
+              style={{
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 12,
+                color: 'var(--aura-text-muted)',
+                marginTop: 6,
+                letterSpacing: '0.1em',
+              }}
+            >
+              让大家认识你
+            </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-1.5 text-ink">昵称</label>
+              <label
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 13,
+                  color: 'var(--aura-text-secondary)',
+                  marginBottom: 10,
+                  letterSpacing: '0.1em',
+                }}
+              >
+                昵称
+              </label>
               <input
                 type="text"
                 placeholder="你的昵称"
@@ -83,36 +114,68 @@ export default function OnboardingPage() {
                 onChange={(e) => setNickname(e.target.value)}
                 required
                 maxLength={20}
-                className="w-full px-4 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-sage transition-colors text-ink"
-                style={{ fontFamily: "'Noto Serif SC', serif" }}
+                className="w-full focus:outline-none"
+                style={{
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 14,
+                  color: 'var(--aura-text-primary)',
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid rgba(0,0,0,0.12)',
+                  padding: '8px 0',
+                }}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-ink">学习目标</label>
+              <label
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 13,
+                  color: 'var(--aura-text-secondary)',
+                  marginBottom: 12,
+                  letterSpacing: '0.1em',
+                }}
+              >
+                学习目标
+              </label>
               <div className="flex flex-wrap gap-2 mb-3">
-                {PRESET_GOALS.map((g) => (
-                  <button
-                    key={g}
-                    type="button"
-                    onClick={() => selectGoal(g)}
-                    className={`px-3 py-1.5 rounded-full text-sm border transition-all active:scale-95 ${
-                      goal === g
-                        ? 'bg-sage text-paper border-sage'
-                        : 'border-cream text-ink-light hover:border-sage-light'
-                    }`}
-                  >
-                    {g}
-                  </button>
-                ))}
+                {PRESET_GOALS.map((g) => {
+                  const selected = goal === g
+                  return (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => selectGoal(g)}
+                      style={{
+                        fontFamily: 'var(--aura-font-sans)',
+                        fontSize: 12,
+                        color: selected ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                        border: `1px solid ${selected ? 'var(--aura-text-primary)' : 'rgba(0,0,0,0.12)'}`,
+                        borderRadius: 999,
+                        padding: '6px 12px',
+                        background: selected ? 'rgba(0,0,0,0.04)' : 'transparent',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {g}
+                    </button>
+                  )
+                })}
                 <button
                   type="button"
                   onClick={() => setGoal('custom')}
-                  className={`px-3 py-1.5 rounded-full text-sm border transition-all active:scale-95 ${
-                    goal === 'custom'
-                      ? 'bg-sage text-paper border-sage'
-                      : 'border-cream text-ink-light hover:border-sage-light'
-                  }`}
+                  style={{
+                    fontFamily: 'var(--aura-font-sans)',
+                    fontSize: 12,
+                    color: goal === 'custom' ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                    border: `1px solid ${goal === 'custom' ? 'var(--aura-text-primary)' : 'rgba(0,0,0,0.12)'}`,
+                    borderRadius: 999,
+                    padding: '6px 12px',
+                    background: goal === 'custom' ? 'rgba(0,0,0,0.04)' : 'transparent',
+                    cursor: 'pointer',
+                  }}
                 >
                   自定义
                 </button>
@@ -125,41 +188,92 @@ export default function OnboardingPage() {
                   onChange={(e) => setCustomGoal(e.target.value)}
                   required
                   maxLength={20}
-                  className="w-full px-4 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-sage transition-colors text-ink"
+                  className="w-full focus:outline-none"
+                  style={{
+                    fontFamily: 'var(--aura-font-sans)',
+                    fontSize: 14,
+                    color: 'var(--aura-text-primary)',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(0,0,0,0.12)',
+                    padding: '8px 0',
+                  }}
                 />
               )}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2 text-ink">每日目标时长</label>
+              <label
+                style={{
+                  display: 'block',
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 13,
+                  color: 'var(--aura-text-secondary)',
+                  marginBottom: 12,
+                  letterSpacing: '0.1em',
+                }}
+              >
+                每日目标时长
+              </label>
               {goal && TARGET_SUGGESTIONS[goal] && (
-                <p className="text-xs text-lavender mb-2">
-                  推荐：「{goal}」每天 {TARGET_SUGGESTIONS[goal]} 分钟
+                <p
+                  style={{
+                    fontFamily: 'var(--aura-font-mono)',
+                    fontSize: 11,
+                    color: 'var(--aura-text-muted)',
+                    marginBottom: 10,
+                    letterSpacing: '0.1em',
+                  }}
+                >
+                  推荐:「{goal}」每天 {TARGET_SUGGESTIONS[goal]} 分钟
                 </p>
               )}
               <div className="flex flex-wrap gap-2">
-                {TARGET_OPTIONS.map(mins => (
-                  <button
-                    key={mins}
-                    type="button"
-                    onClick={() => setTargetMinutes(mins)}
-                    className={`px-3 py-1.5 rounded-full text-sm border transition-all active:scale-95 ${
-                      targetMinutes === mins
-                        ? 'bg-terracotta text-paper border-terracotta'
-                        : 'border-cream text-ink-light hover:border-terracotta-light'
-                    }`}
-                  >
-                    {mins >= 60 ? `${mins / 60}小时` : `${mins}分钟`}
-                  </button>
-                ))}
+                {TARGET_OPTIONS.map(mins => {
+                  const selected = targetMinutes === mins
+                  return (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => setTargetMinutes(mins)}
+                      style={{
+                        fontFamily: 'var(--aura-font-sans)',
+                        fontSize: 12,
+                        color: selected ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                        border: `1px solid ${selected ? 'var(--aura-text-primary)' : 'rgba(0,0,0,0.12)'}`,
+                        borderRadius: 999,
+                        padding: '6px 12px',
+                        background: selected ? 'rgba(0,0,0,0.04)' : 'transparent',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {mins >= 60 ? `${mins / 60}小时` : `${mins}分钟`}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading || !nickname.trim() || !finalGoal.trim()}
-              className="w-full py-3 bg-sage text-paper rounded-xl font-medium disabled:opacity-50 shadow-sm active:scale-[0.98] transition-all"
-              style={{ fontFamily: 'var(--font-display)' }}
+              style={{
+                width: '100%',
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 14,
+                letterSpacing: '0.2em',
+                fontWeight: 500,
+                color: loading || !nickname.trim() || !finalGoal.trim()
+                  ? 'var(--aura-text-muted)'
+                  : 'var(--aura-text-primary)',
+                background: 'transparent',
+                border: 'none',
+                borderBottom: `1px solid ${loading || !nickname.trim() || !finalGoal.trim()
+                  ? 'rgba(0,0,0,0.2)'
+                  : 'var(--aura-text-primary)'}`,
+                paddingBottom: 4,
+                cursor: loading || !nickname.trim() || !finalGoal.trim() ? 'not-allowed' : 'pointer',
+              }}
             >
               {loading ? '保存中...' : '开始打卡'}
             </button>
