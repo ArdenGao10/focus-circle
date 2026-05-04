@@ -242,18 +242,8 @@ export default function TimerPage() {
           padding: '0 24px 24px',
         }}
       >
-        {/* 1. Top wordmark */}
-        <div
-          className="text-center"
-          style={{
-            fontFamily: 'var(--aura-font-mono)',
-            fontSize: 11,
-            letterSpacing: '0.2em',
-            color: 'var(--aura-text-muted)',
-          }}
-        >
-          FOCUS.CIRCLE
-        </div>
+        {/* 1. Top spacer (keeps original vertical rhythm) */}
+        <div style={{ height: 13 }} />
 
         {/* 2. Big serif title */}
         <h1
@@ -274,9 +264,10 @@ export default function TimerPage() {
           className="mt-3 text-center"
           style={{
             fontFamily: 'var(--aura-font-serif)',
-            fontStyle: 'italic',
             fontSize: 14,
             color: 'var(--aura-text-secondary)',
+            fontStyle: 'italic',
+            fontVariantNumeric: 'tabular-nums lining-nums',
           }}
         >
           {formatAuraDate(today)} · 静而后能定
