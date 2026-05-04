@@ -1,12 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useAppData } from '@/components/AppDataContext'
 import { useTimer, useLiveElapsed } from '@/components/TimerContext'
-import { Branch, Sprig } from '@/components/Botanicals'
-import FocusBarChart from '@/components/FocusBarChart'
 import {
   fetchSessionsSince,
   fetchCompletedTaskCount,
@@ -17,6 +15,11 @@ import {
   todayDateKey,
   type StatsResult,
 } from '@/lib/focusStats'
+import { BarChart, Bar, XAxis, Tooltip, Cell, ResponsiveContainer } from 'recharts'
+
+type Period = 'week' | 'month'
+
+const WEEKDAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
 function formatDuration(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -25,46 +28,83 @@ function formatDuration(seconds: number): string {
   return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
 }
 
-function formatDate(dateStr: string): string {
-  const d = new Date(dateStr + 'T00:00:00')
-  return `${d.getMonth() + 1}月${d.getDate()}日`
+function formatMinutes(mins: number): string {
+  if (mins <= 0) return '0 m'
+  const h = Math.floor(mins / 60)
+  const m = mins % 60
+  if (h === 0) return `${m} m`
+  if (m === 0) return `${h} h`
+  return `${h} h ${m} m`
 }
 
-function ProfileSkeleton() {
+function formatDateZh(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00')
+  return `${d.getMonth() + 1}/${d.getDate()}`
+}
+
+function weekdayLabel(dateKey: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number)
+  return WEEKDAY_LABELS[new Date(y, m - 1, d).getDay()]
+}
+
+function weekRangeLabel(startKey: string): string {
+  const [y, m, d] = startKey.split('-').map(Number)
+  const start = new Date(y, m - 1, d)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 6)
+  return `${start.getMonth() + 1}/${start.getDate()} – ${end.getMonth() + 1}/${end.getDate()}`
+}
+
+interface ChartRow {
+  label: string
+  minutes: number
+  tooltipDate: string
+}
+
+function CustomTooltip({ active, payload }: { active?: boolean; payload?: Array<{ payload: ChartRow }> }) {
+  if (!active || !payload?.length) return null
+  const d = payload[0].payload
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
-      <div className="bg-paper rounded-2xl border border-cream p-5 shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-cream animate-pulse" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 bg-cream rounded w-24 animate-pulse" />
-            <div className="h-3 bg-cream rounded w-32 animate-pulse" />
-          </div>
-        </div>
+    <div style={{
+      background: 'rgba(255,255,255,0.96)',
+      borderRadius: 8,
+      boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+      padding: '8px 12px',
+      fontFamily: 'var(--aura-font-sans)',
+      fontSize: 12,
+    }}>
+      <div style={{ color: 'var(--aura-text-muted)', fontSize: 10, letterSpacing: '0.1em', marginBottom: 2 }}>
+        {d.tooltipDate}
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        {[1, 2, 3].map(i => <div key={i} className="bg-paper rounded-xl border border-cream p-3 h-16 animate-pulse" />)}
+      <div style={{ color: 'var(--aura-text-primary)', fontFamily: 'var(--aura-font-mono)' }}>
+        {formatMinutes(d.minutes)}
       </div>
-      <div className="bg-paper rounded-2xl border border-cream h-48 animate-pulse" />
     </div>
   )
+}
+
+const sectionTitleStyle: React.CSSProperties = {
+  fontFamily: 'var(--aura-font-sans)',
+  fontSize: 12,
+  fontWeight: 500,
+  letterSpacing: '0.18em',
+  color: 'var(--aura-text-muted)',
+  margin: 0,
 }
 
 export default function ProfilePage() {
   const { profile, dailyTasks, pendingCount, retryPendingSessions, profileHistory, loadProfileHistory, userId } = useAppData()
   const { state: timerState } = useTimer()
   const liveElapsed = useLiveElapsed()
-  const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [historyExpanded, setHistoryExpanded] = useState(false)
-  const [statsView, setStatsView] = useState<'week' | 'month'>('week')
+  const [period, setPeriod] = useState<Period>('week')
   const [statsResult, setStatsResult] = useState<StatsResult | null>(null)
   const [completedTasks, setCompletedTasks] = useState<number>(0)
   const [statsLoading, setStatsLoading] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [historyExpanded, setHistoryExpanded] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    loadProfileHistory()
-  }, [loadProfileHistory])
+  useEffect(() => { loadProfileHistory() }, [loadProfileHistory])
 
   useEffect(() => {
     if (!userId) return
@@ -72,7 +112,7 @@ export default function ProfilePage() {
     async function load() {
       if (!userId) return
       setStatsLoading(true)
-      const days = statsView === 'week' ? 7 : 28
+      const days = period === 'week' ? 7 : 28
       const sinceISO = rangeStartISO(days)
       const fromKey = rangeStartDateKey(days)
       const toKey = todayDateKey()
@@ -81,16 +121,14 @@ export default function ProfilePage() {
         fetchCompletedTaskCount(userId, fromKey, toKey),
       ])
       if (cancelled) return
-      const result = statsView === 'week'
-        ? bucketByDay(sessions, 7)
-        : bucketByWeek(sessions, 4)
+      const result = period === 'week' ? bucketByDay(sessions, 7) : bucketByWeek(sessions, 4)
       setStatsResult(result)
       setCompletedTasks(taskCount)
       setStatsLoading(false)
     }
     load()
     return () => { cancelled = true }
-  }, [statsView, userId])
+  }, [period, userId])
 
   async function handleLogout() {
     const supabase = createClient()
@@ -99,226 +137,402 @@ export default function ProfilePage() {
     router.refresh()
   }
 
-  if (!profile) return <ProfileSkeleton />
-
-  const allSessions = profileHistory || []
-  const historyLoaded = profileHistory !== null
-
   const isTimerActive = timerState !== 'idle'
   const today = new Date().toISOString().split('T')[0]
+  const allSessions = profileHistory || []
+  const historyLoaded = profileHistory !== null
+  const targetMins = profile?.target_minutes || 120
 
-  const targetMins = profile.target_minutes || 120
   const baseTotal = allSessions.reduce((sum, s) => sum + s.duration_seconds, 0)
   const totalSeconds = baseTotal + (isTimerActive ? liveElapsed : 0)
   const totalDays = new Set(allSessions.map(s => s.date)).size
 
-  const sessionsByDate = allSessions.reduce<Record<string, number>>((acc, s) => {
-    acc[s.date] = (acc[s.date] || 0) + s.duration_seconds
-    return acc
-  }, {})
-  // Add live elapsed to today's entry
-  if (isTimerActive) {
-    sessionsByDate[today] = (sessionsByDate[today] || 0) + liveElapsed
-  }
-  const dateList = Object.keys(sessionsByDate).sort((a, b) => b.localeCompare(a))
-  const dateTasks = selectedDate ? dailyTasks.filter(t => t.date === selectedDate) : []
+  const sessionsByDate = useMemo(() => {
+    const m: Record<string, number> = {}
+    for (const s of allSessions) m[s.date] = (m[s.date] || 0) + s.duration_seconds
+    if (isTimerActive) m[today] = (m[today] || 0) + liveElapsed
+    return m
+  }, [allSessions, isTimerActive, liveElapsed, today])
+
+  const dateList = useMemo(
+    () => Object.keys(sessionsByDate).sort((a, b) => b.localeCompare(a)),
+    [sessionsByDate],
+  )
+
+  const chartData: ChartRow[] = useMemo(() => {
+    if (!statsResult) return []
+    return statsResult.buckets.map((b, i) => {
+      if (period === 'week') {
+        return {
+          label: weekdayLabel(b.key),
+          minutes: b.minutes,
+          tooltipDate: formatDateZh(b.key),
+        }
+      }
+      return {
+        label: `W${i + 1}`,
+        minutes: b.minutes,
+        tooltipDate: weekRangeLabel(b.key),
+      }
+    })
+  }, [statsResult, period])
+
+  const summaryItems = useMemo(() => {
+    if (!statsResult) {
+      return [
+        { label: period === 'week' ? '本周时长' : '近 4 周时长', value: '–' },
+        { label: '完成任务', value: '–' },
+        { label: '日均时长', value: '–' },
+      ]
+    }
+    return [
+      { label: period === 'week' ? '本周时长' : '近 4 周时长', value: formatMinutes(statsResult.summary.totalMinutes) },
+      { label: '完成任务', value: String(completedTasks) },
+      { label: '日均时长', value: `${statsResult.summary.avgDailyMinutes} m` },
+    ]
+  }, [statsResult, completedTasks, period])
+
+  const initial = (profile?.nickname || profile?.email || '·').charAt(0).toUpperCase()
+  const goalText = profile?.goal ? `正在专注 · ${profile.goal}` : '正在专注'
+  const visibleDates = historyExpanded ? dateList.slice(0, 30) : dateList.slice(0, 5)
+
+  const bigStats = [
+    { label: '打卡天数', value: historyLoaded ? String(totalDays) : '–', unit: '天' },
+    { label: '累计时长', value: historyLoaded ? formatDuration(totalSeconds) : '–', unit: '' },
+    { label: '日目标', value: String(targetMins), unit: '分' },
+  ]
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6 space-y-5">
-      {/* Profile card — instant from cache */}
-      <div className="relative bg-paper rounded-2xl border border-cream p-5 shadow-sm paper-texture overflow-hidden">
-        <Branch className="absolute top-0 right-0 w-28 h-10 text-sage-dark" />
-        <div className="absolute top-0 left-10 w-16 h-2.5 bg-butter opacity-40 -translate-y-0.5 rounded-b-sm rotate-[-1deg]" />
-        <div className="flex items-center gap-4 relative">
-          <div className="w-14 h-14 rounded-xl bg-sage text-paper flex items-center justify-center text-xl font-bold shadow-sm border border-sage-dark/10">
-            {profile.nickname.charAt(0)}
+    <div style={{ background: 'var(--aura-bg-primary)', color: 'var(--aura-text-primary)', minHeight: '100%' }}>
+      <main style={{ maxWidth: 600, margin: '0 auto', padding: '40px 24px 80px' }}>
+        {/* 1. Profile header */}
+        <section style={{ marginBottom: 48 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 56, height: 56, borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(168, 213, 186, 0.3) 0%, rgba(168, 213, 186, 0.1) 70%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'var(--aura-font-serif)',
+              fontSize: 24, color: 'var(--aura-text-primary)',
+            }}>
+              {initial}
+            </div>
+            <div>
+              <h1 style={{
+                fontFamily: 'var(--aura-font-serif)',
+                fontSize: 28, fontWeight: 400, lineHeight: 1.1,
+                color: 'var(--aura-text-primary)',
+                margin: 0, marginBottom: 4,
+              }}>
+                {profile?.nickname || '——'}
+              </h1>
+              <p style={{
+                margin: 0,
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 13, color: 'var(--aura-text-muted)', letterSpacing: '0.05em',
+              }}>
+                {goalText}
+              </p>
+            </div>
           </div>
-          <div className="flex-1">
-            <div className="font-bold text-2xl text-ink leading-tight" style={{ fontFamily: 'var(--font-display)' }}>{profile.nickname}</div>
-            <div className="text-sm text-ink-light italic mt-0.5" style={{ fontFamily: 'var(--font-script)' }}>focusing on {profile.goal}</div>
-            <div className="text-[11px] text-ink-light/70 mt-1">{profile.email}</div>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-paper rounded-xl border border-cream p-3 text-center paper-texture">
-          <div className="text-2xl font-bold text-sage-dark">{historyLoaded ? totalDays : '–'}</div>
-          <div className="text-xs text-ink-light mt-0.5">打卡天数</div>
-        </div>
-        <div className="bg-paper rounded-xl border border-cream p-3 text-center paper-texture">
-          <div className="text-lg font-bold text-terracotta font-numeric">
-            {historyLoaded ? formatDuration(totalSeconds) : '–'}
-          </div>
-          <div className="text-xs text-ink-light mt-0.5">累计时长</div>
-        </div>
-        <div className="bg-paper rounded-xl border border-cream p-3 text-center paper-texture">
-          <div className="text-2xl font-bold text-lavender">{targetMins}</div>
-          <div className="text-xs text-ink-light mt-0.5">日目标(分)</div>
-        </div>
-      </div>
+        {/* 2. Three big stats */}
+        <section style={{
+          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+          marginBottom: 48,
+          borderTop: '1px solid rgba(0,0,0,0.06)',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
+        }}>
+          {bigStats.map((stat, i) => (
+            <div key={stat.label} style={{
+              padding: '20px 0', textAlign: 'center',
+              borderRight: i < bigStats.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none',
+            }}>
+              <div style={{
+                fontFamily: 'var(--aura-font-serif)',
+                fontSize: stat.value.length > 5 ? 20 : 32,
+                fontWeight: 300,
+                color: 'var(--aura-text-primary)',
+                marginBottom: 4,
+                fontVariantNumeric: 'tabular-nums lining-nums',
+              }}>
+                {stat.value}
+                {stat.unit && (
+                  <span style={{
+                    fontSize: 14, color: 'var(--aura-text-secondary)', marginLeft: 4,
+                  }}>
+                    {stat.unit}
+                  </span>
+                )}
+              </div>
+              <div style={{
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 11, color: 'var(--aura-text-muted)', letterSpacing: '0.15em',
+              }}>
+                {stat.label}
+              </div>
+            </div>
+          ))}
+        </section>
 
-      {/* Stats — week / month focus chart */}
-      <div className="bg-paper rounded-2xl border border-cream shadow-sm overflow-hidden paper-texture">
-        <div className="p-4 border-b border-cream/60 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sprig className="w-4 h-6 text-sage-dark" />
-            <h2 className="font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>学习统计</h2>
+        {/* 3. Learning stats — chart with week/month toggle */}
+        <section style={{ marginBottom: 48 }}>
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+            marginBottom: 24,
+          }}>
+            <h3 style={sectionTitleStyle}>学习统计</h3>
+            <div style={{ display: 'flex', gap: 24 }}>
+              {(['week', 'month'] as Period[]).map(p => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  style={{
+                    fontFamily: 'var(--aura-font-sans)',
+                    fontSize: 13,
+                    color: period === p ? 'var(--aura-text-primary)' : 'var(--aura-text-muted)',
+                    background: 'transparent',
+                    border: 'none',
+                    borderBottom: `1px solid ${period === p ? 'var(--aura-text-primary)' : 'transparent'}`,
+                    paddingBottom: 2,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {p === 'week' ? '周' : '月'}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="inline-flex bg-paper-warm rounded-full p-0.5 border border-cream">
-            {(['week', 'month'] as const).map(v => (
-              <button
-                key={v}
-                onClick={() => setStatsView(v)}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  statsView === v
-                    ? 'bg-sage text-paper shadow-sm'
-                    : 'text-ink-light hover:text-ink'
-                }`}
-              >
-                {v === 'week' ? '周' : '月'}
-              </button>
+
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32,
+          }}>
+            {summaryItems.map(s => (
+              <div key={s.label}>
+                <div style={{
+                  fontFamily: 'var(--aura-font-serif)',
+                  fontSize: 24, fontWeight: 300,
+                  color: 'var(--aura-text-primary)', marginBottom: 4,
+                  fontVariantNumeric: 'tabular-nums lining-nums',
+                }}>
+                  {s.value}
+                </div>
+                <div style={{
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 11, color: 'var(--aura-text-muted)', letterSpacing: '0.1em',
+                }}>
+                  {s.label}
+                </div>
+              </div>
             ))}
           </div>
-        </div>
 
-        <div className="p-4 space-y-4">
-          {statsLoading && !statsResult ? (
-            <div className="space-y-3">
-              <div className="grid grid-cols-3 gap-2">
-                {[1, 2, 3].map(i => <div key={i} className="h-14 bg-cream/60 rounded-xl animate-pulse" />)}
-              </div>
-              <div className="h-44 bg-cream/40 rounded-xl animate-pulse" />
-            </div>
-          ) : !statsResult || statsResult.summary.totalSessions === 0 ? (
-            <div className="py-10 text-center">
-              <p className="text-sm text-ink-light">还没有学习记录</p>
-              <p className="text-xs text-ink-light/50 mt-1">开始你的第一段专注吧 🌸</p>
-            </div>
+          <div style={{ height: 200 }}>
+            {statsLoading && !statsResult ? (
+              <div style={{ height: '100%', background: 'rgba(0,0,0,0.02)', borderRadius: 8 }} />
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                  <XAxis
+                    dataKey="label"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{
+                      fontSize: 11,
+                      fill: 'var(--aura-text-muted)',
+                      fontFamily: 'var(--aura-font-mono)',
+                      letterSpacing: '0.1em',
+                    }}
+                  />
+                  <Tooltip cursor={{ fill: 'transparent' }} content={<CustomTooltip />} />
+                  <Bar dataKey="minutes" minPointSize={4} radius={[4, 4, 0, 0]}>
+                    {chartData.map((d, i) => (
+                      <Cell
+                        key={i}
+                        fill={d.minutes > 0 ? 'rgba(111, 169, 137, 0.7)' : 'rgba(0, 0, 0, 0.05)'}
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </section>
+
+        {/* 4. Learning history */}
+        <section style={{ marginBottom: 48 }}>
+          <h3 style={{ ...sectionTitleStyle, marginBottom: 20 }}>学习记录</h3>
+          {!historyLoaded ? (
+            <div style={{
+              padding: '24px 0', fontFamily: 'var(--aura-font-sans)',
+              fontSize: 12, color: 'var(--aura-text-muted)',
+            }}>加载中…</div>
+          ) : dateList.length === 0 ? (
+            <div style={{
+              padding: '24px 0', fontFamily: 'var(--aura-font-sans)',
+              fontSize: 12, color: 'var(--aura-text-muted)',
+            }}>暂无记录</div>
           ) : (
             <>
-              <div className="grid grid-cols-3 gap-2">
-                <div className="bg-paper-warm rounded-xl p-2.5 text-center border border-cream/60">
-                  <div className="text-lg font-bold text-sage-dark font-numeric">
-                    {Math.floor(statsResult.summary.totalMinutes / 60) > 0
-                      ? `${Math.floor(statsResult.summary.totalMinutes / 60)}h${statsResult.summary.totalMinutes % 60}m`
-                      : `${statsResult.summary.totalMinutes}m`}
-                  </div>
-                  <div className="text-[10px] text-ink-light mt-0.5">{statsView === 'week' ? '本周' : '近 4 周'}总时长</div>
-                </div>
-                <div className="bg-paper-warm rounded-xl p-2.5 text-center border border-cream/60">
-                  <div className="text-lg font-bold text-terracotta font-numeric">{completedTasks}</div>
-                  <div className="text-[10px] text-ink-light mt-0.5">完成任务数</div>
-                </div>
-                <div className="bg-paper-warm rounded-xl p-2.5 text-center border border-cream/60">
-                  <div className="text-lg font-bold text-lavender font-numeric">{statsResult.summary.avgDailyMinutes}m</div>
-                  <div className="text-[10px] text-ink-light mt-0.5">日均时长</div>
-                </div>
-              </div>
-
-              <FocusBarChart
-                data={statsResult.buckets}
-                unit={statsView === 'week' ? 'day' : 'week'}
-                height={160}
-              />
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* History */}
-      <div className="bg-paper rounded-2xl border border-cream shadow-sm overflow-hidden paper-texture">
-        <div className="p-4 border-b border-cream/60">
-          <div className="flex items-center gap-2">
-            <Sprig className="w-4 h-6 text-sage-dark" />
-            <h2 className="font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>学习记录</h2>
-          </div>
-        </div>
-        {!historyLoaded ? (
-          <div className="p-4 space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-2 h-2 bg-cream rounded-full" />
-                <div className="h-2 bg-cream rounded flex-1 animate-pulse" />
-                <div className="h-2 bg-cream rounded w-16 animate-pulse" />
-              </div>
-            ))}
-          </div>
-        ) : dateList.length === 0 ? (
-          <div className="p-6 text-center text-ink-light/40 text-sm">暂无记录</div>
-        ) : (
-          <>
-            <div className="divide-y divide-cream/40">
-              {(historyExpanded ? dateList.slice(0, 30) : dateList.slice(0, 3)).map(date => {
+              {visibleDates.map(date => {
                 const secs = sessionsByDate[date]
                 const progress = Math.min((secs / (targetMins * 60)) * 100, 100)
                 const isSelected = selectedDate === date
+                const dayTasks = isSelected ? dailyTasks.filter(t => t.date === date) : []
 
                 return (
                   <div key={date}>
-                    <button onClick={() => setSelectedDate(isSelected ? null : date)} className="w-full flex items-center gap-3 p-3.5 hover:bg-paper-warm transition-colors text-left">
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${progress >= 100 ? 'bg-sage' : 'bg-rose'}`} />
-                      <span className="text-sm font-medium w-14 shrink-0 text-ink">{formatDate(date)}</span>
-                      <div className="flex-1 h-1.5 bg-cream rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${progress >= 100 ? 'bg-sage' : 'bg-terracotta'}`} style={{ width: `${progress}%` }} />
+                    <button
+                      onClick={() => setSelectedDate(isSelected ? null : date)}
+                      style={{
+                        width: '100%',
+                        display: 'flex', alignItems: 'center', gap: 16,
+                        padding: '14px 0',
+                        background: 'transparent',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(0,0,0,0.04)',
+                        textAlign: 'left',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span style={{
+                        width: 50,
+                        fontFamily: 'var(--aura-font-mono)',
+                        fontSize: 12, color: 'var(--aura-text-muted)',
+                        fontVariantNumeric: 'tabular-nums lining-nums',
+                      }}>
+                        {formatDateZh(date)}
+                      </span>
+                      <div style={{
+                        flex: 1, height: 4,
+                        background: 'rgba(0,0,0,0.04)',
+                        borderRadius: 2, overflow: 'hidden',
+                      }}>
+                        <div style={{
+                          width: `${progress}%`, height: '100%',
+                          background: 'rgba(111, 169, 137, 0.5)', borderRadius: 2,
+                        }} />
                       </div>
-                      <span className="text-sm font-medium text-ink w-16 text-right shrink-0">{formatDuration(secs)}</span>
-                      <svg className={`w-3.5 h-3.5 text-ink-light/30 shrink-0 transition-transform ${isSelected ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
+                      <span style={{
+                        minWidth: 70, textAlign: 'right',
+                        fontFamily: 'var(--aura-font-mono)',
+                        fontSize: 12, color: 'var(--aura-text-secondary)',
+                        fontVariantNumeric: 'tabular-nums lining-nums',
+                      }}>
+                        {formatDuration(secs)}
+                      </span>
                     </button>
-                    {isSelected && dateTasks.length > 0 && (
-                      <div className="px-4 pb-3 pl-10">
-                        <div className="text-xs text-ink-light mb-1.5">当日任务</div>
-                        {dateTasks.map(t => (
-                          <div key={t.id} className="flex items-center gap-2 py-1">
-                            <div className={`w-3 h-3 rounded-full border flex items-center justify-center ${t.completed ? 'bg-sage border-sage text-paper' : 'border-ink-light/30'}`}>
-                              {t.completed && <svg className="w-1.5 h-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
-                            </div>
-                            <span className={`text-xs ${t.completed ? 'text-ink-light/40 line-through' : 'text-ink'}`}>{t.title}</span>
+                    {isSelected && dayTasks.length > 0 && (
+                      <div style={{ padding: '8px 0 14px 66px' }}>
+                        <div style={{
+                          fontFamily: 'var(--aura-font-sans)',
+                          fontSize: 11, color: 'var(--aura-text-muted)',
+                          letterSpacing: '0.12em', marginBottom: 6,
+                        }}>当日任务</div>
+                        {dayTasks.map(t => (
+                          <div key={t.id} style={{
+                            display: 'flex', alignItems: 'center', gap: 8,
+                            padding: '4px 0',
+                            fontFamily: 'var(--aura-font-sans)',
+                            fontSize: 13,
+                            color: t.completed ? 'var(--aura-text-muted)' : 'var(--aura-text-primary)',
+                            textDecoration: t.completed ? 'line-through' : 'none',
+                          }}>
+                            <span style={{
+                              width: 5, height: 5, borderRadius: '50%',
+                              background: t.completed ? 'var(--aura-green-solid)' : 'rgba(0,0,0,0.18)',
+                              opacity: t.completed ? 0.75 : 1,
+                            }} />
+                            {t.title}
                           </div>
                         ))}
                       </div>
                     )}
-                    {isSelected && dateTasks.length === 0 && (
-                      <div className="px-4 pb-3 pl-10"><span className="text-xs text-ink-light/30">当日未设置任务</span></div>
+                    {isSelected && dayTasks.length === 0 && (
+                      <div style={{
+                        padding: '8px 0 14px 66px',
+                        fontFamily: 'var(--aura-font-sans)',
+                        fontSize: 12, color: 'var(--aura-text-muted)', opacity: 0.6,
+                      }}>当日未设置任务</div>
                     )}
                   </div>
                 )
               })}
-            </div>
-            {dateList.length > 3 && (
-              <button
-                onClick={() => setHistoryExpanded(v => !v)}
-                className="w-full flex items-center justify-center gap-1.5 py-3 text-xs text-ink-light hover:bg-paper-warm border-t border-cream/40 transition-colors"
-              >
-                <span>{historyExpanded ? '收起' : `展开全部 ${Math.min(dateList.length, 30)} 天`}</span>
-                <svg className={`w-3 h-3 transition-transform ${historyExpanded ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-            )}
-          </>
+              {dateList.length > 5 && (
+                <button
+                  onClick={() => setHistoryExpanded(v => !v)}
+                  style={{
+                    marginTop: 20, padding: 0,
+                    fontFamily: 'var(--aura-font-sans)',
+                    fontSize: 12, letterSpacing: '0.15em',
+                    color: 'var(--aura-text-muted)',
+                    background: 'transparent', border: 'none', cursor: 'pointer',
+                  }}
+                >
+                  {historyExpanded ? '收起' : `展开全部 ${Math.min(dateList.length, 30)} 天`}
+                </button>
+              )}
+            </>
+          )}
+        </section>
+
+        {pendingCount > 0 && (
+          <button
+            onClick={retryPendingSessions}
+            style={{
+              width: '100%', padding: '12px 0', marginBottom: 32,
+              fontFamily: 'var(--aura-font-sans)',
+              fontSize: 12, color: 'var(--aura-text-secondary)',
+              background: 'rgba(217, 192, 136, 0.08)',
+              border: '1px solid rgba(217, 192, 136, 0.4)',
+              borderRadius: 8, cursor: 'pointer',
+            }}
+          >
+            有 {pendingCount} 条记录未同步，点此重试
+          </button>
         )}
-      </div>
 
-      {pendingCount > 0 && (
-        <button
-          onClick={retryPendingSessions}
-          className="w-full py-3 bg-butter-light border border-butter rounded-xl text-sm text-terracotta hover:bg-butter/30 active:scale-[0.99] transition-all"
-        >
-          有 {pendingCount} 条记录未同步，点此重试
-        </button>
-      )}
-
-      <div className="space-y-2.5">
-        <button onClick={() => router.push('/onboarding')} className="w-full py-3 bg-paper border border-cream rounded-xl text-sm font-medium text-ink hover:bg-paper-warm active:scale-[0.99] transition-all">修改资料</button>
-        <button onClick={() => router.push('/feedback')} className="w-full py-3 bg-paper border border-cream rounded-xl text-sm font-medium text-ink hover:bg-paper-warm active:scale-[0.99] transition-all flex items-center justify-center gap-2">
-          <span>💬</span> 帮助与反馈
-        </button>
-        <button onClick={handleLogout} className="w-full py-3 text-rose-dark text-sm font-medium hover:bg-rose-light/20 rounded-xl transition-colors">退出登录</button>
-      </div>
+        {/* 5. Actions — text-style */}
+        <section style={{
+          display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center',
+          paddingTop: 32, borderTop: '1px solid rgba(0,0,0,0.04)',
+        }}>
+          <button
+            onClick={() => router.push('/onboarding')}
+            style={{
+              fontFamily: 'var(--aura-font-sans)',
+              fontSize: 13, letterSpacing: '0.18em',
+              color: 'var(--aura-text-secondary)',
+              background: 'transparent', border: 'none', padding: '4px 0', cursor: 'pointer',
+            }}
+          >
+            修改资料
+          </button>
+          <button
+            onClick={() => router.push('/feedback')}
+            style={{
+              fontFamily: 'var(--aura-font-sans)',
+              fontSize: 13, letterSpacing: '0.18em',
+              color: 'var(--aura-text-secondary)',
+              background: 'transparent', border: 'none', padding: '4px 0', cursor: 'pointer',
+            }}
+          >
+            帮助与反馈
+          </button>
+          <button
+            onClick={handleLogout}
+            style={{
+              fontFamily: 'var(--aura-font-sans)',
+              fontSize: 13, letterSpacing: '0.18em',
+              color: 'rgba(195, 100, 95, 0.8)',
+              background: 'transparent', border: 'none', padding: '4px 0', cursor: 'pointer',
+            }}
+          >
+            退出登录
+          </button>
+        </section>
+      </main>
     </div>
   )
 }
