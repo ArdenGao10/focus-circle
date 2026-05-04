@@ -70,8 +70,8 @@ function AuraHalo({ state, children }: { state: TimerVisualState; children: Reac
         position: 'relative',
         width: '100%',
         aspectRatio: '1 / 1',
-        maxWidth: 380,
-        margin: '0 auto',
+        maxWidth: 420,
+        margin: '20px auto',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -98,17 +98,17 @@ function AuraHalo({ state, children }: { state: TimerVisualState; children: Reac
         />
       ))}
 
-      {/* Core — 55% size, gradient fades fully transparent at 70%. */}
+      {/* Core — 70% size, gradient fades fully transparent at 70%. */}
       {states.map(s => (
         <div
           key={`c-${s}`}
           aria-hidden="true"
           style={{
             position: 'absolute',
-            width: '55%',
-            height: '55%',
-            left: '22.5%',
-            top: '22.5%',
+            width: '70%',
+            height: '70%',
+            left: '15%',
+            top: '15%',
             background: ORB_GRADIENTS[s].core,
             borderRadius: '50%',
             pointerEvents: 'none',
