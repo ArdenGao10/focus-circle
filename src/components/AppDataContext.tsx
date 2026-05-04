@@ -298,7 +298,12 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     initRef.current = true
 
     const supabase = createClient()
-    const today = new Date().toISOString().split('T')[0]
+    // Local-midnight as UTC ISO — avoids cutting off sessions across the
+    // local→UTC date boundary (e.g. evenings in negative offsets).
+    const now = new Date()
+    const localMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const todayStartIso = localMidnight.toISOString()
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
     async function init() {
       // 1. Auth + leaderboard in parallel
@@ -314,9 +319,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       // 2. Profile + sessions + tasks in parallel
       const [profileRes, sessionsRes, tasksRes] = await Promise.all([
         supabase.from('profiles').select('nickname, goal, email, target_minutes').eq('id', user.id).single(),
-        // Try with task_name first
+        // Try with task_name first; filter by local-midnight UTC timestamp
         supabase.from('sessions').select('id, duration_seconds, created_at, task_name')
-          .eq('user_id', user.id).eq('date', today).order('created_at', { ascending: false }),
+          .eq('user_id', user.id).gte('created_at', todayStartIso).order('created_at', { ascending: false }),
         supabase.from('daily_tasks').select('id, title, completed, date, source')
           .eq('user_id', user.id).eq('date', today).order('created_at'),
       ])
@@ -336,7 +341,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       } else {
         // Fallback without task_name
         const { data: fallback } = await supabase.from('sessions').select('id, duration_seconds, created_at')
-          .eq('user_id', user.id).eq('date', today).order('created_at', { ascending: false })
+          .eq('user_id', user.id).gte('created_at', todayStartIso).order('created_at', { ascending: false })
         if (fallback) setTodaySessions(fallback)
       }
 

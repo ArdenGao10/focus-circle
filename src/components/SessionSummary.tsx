@@ -42,9 +42,11 @@ export default function SessionSummary() {
           style={{
             width: 240,
             height: 240,
-            background: 'radial-gradient(circle, rgba(168, 213, 186, 0.4) 0%, rgba(168, 213, 186, 0.15) 50%, transparent 90%)',
+            background:
+              'radial-gradient(circle, var(--aura-complete-primary) 0%, var(--aura-complete-soft) 50%, transparent 90%)',
             filter: 'blur(30px)',
             marginBottom: 60,
+            transition: 'background 1.2s ease',
           }}
         />
 

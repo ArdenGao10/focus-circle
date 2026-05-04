@@ -46,23 +46,29 @@ function normalizeTaskName(taskName: string | null | undefined): string {
 // frame; core is 55% with a gradient that fades to transparent at
 // 70%, leaving no visible rim. No ancestor may set `overflow:hidden`.
 
+// Outer diffuse halo stays unanimated; only the core breathes.
+// Color tokens come from globals.css so timer state shifts the gradient
+// while the geometry (140% bleed for outer, 320px fixed for core) stays put.
 const ORB_GRADIENTS: Record<TimerVisualState, { outer: string; core: string }> = {
   idle: {
-    outer: 'radial-gradient(circle, rgba(168, 213, 186, 0.30) 0%, rgba(168, 213, 186, 0.10) 35%, transparent 70%)',
-    core:  'radial-gradient(circle, rgba(111, 169, 137, 0.40) 0%, rgba(168, 213, 186, 0.20) 45%, transparent 70%)',
+    outer: 'radial-gradient(circle, var(--aura-focus-soft) 0%, var(--aura-focus-soft) 35%, transparent 70%)',
+    core:  'radial-gradient(circle, var(--aura-focus-primary) 0%, var(--aura-focus-soft) 45%, transparent 70%)',
   },
   running: {
-    outer: 'radial-gradient(circle, rgba(168, 213, 186, 0.35) 0%, rgba(168, 213, 186, 0.12) 35%, transparent 70%)',
-    core:  'radial-gradient(circle, rgba(111, 169, 137, 0.50) 0%, rgba(168, 213, 186, 0.25) 45%, transparent 70%)',
+    outer: 'radial-gradient(circle, var(--aura-focus-soft) 0%, var(--aura-focus-soft) 35%, transparent 70%)',
+    core:  'radial-gradient(circle, var(--aura-focus-primary) 0%, var(--aura-focus-soft) 45%, transparent 70%)',
   },
   paused: {
-    outer: 'radial-gradient(circle, rgba(197, 181, 221, 0.30) 0%, rgba(197, 181, 221, 0.10) 35%, transparent 70%)',
-    core:  'radial-gradient(circle, rgba(160, 140, 195, 0.42) 0%, rgba(197, 181, 221, 0.22) 45%, transparent 70%)',
+    outer: 'radial-gradient(circle, var(--aura-paused-soft) 0%, var(--aura-paused-soft) 35%, transparent 70%)',
+    core:  'radial-gradient(circle, var(--aura-paused-primary) 0%, var(--aura-paused-soft) 45%, transparent 70%)',
   },
 }
 
 function AuraHalo({ state, children }: { state: TimerVisualState; children: React.ReactNode }) {
-  const states: TimerVisualState[] = ['idle', 'running', 'paused']
+  const gradient = ORB_GRADIENTS[state]
+  const coreClassName = state === 'paused'
+    ? 'aura-orb-breathe aura-breathe-paused'
+    : 'aura-orb-breathe'
 
   return (
     <div
@@ -78,47 +84,49 @@ function AuraHalo({ state, children }: { state: TimerVisualState; children: Reac
       }}
     >
       {/* Outer diffuse glow — oversized + negative offset bleeds beyond container. */}
-      {states.map(s => (
-        <div
-          key={`o-${s}`}
-          aria-hidden="true"
-          style={{
-            position: 'absolute',
-            width: '140%',
-            height: '140%',
-            left: '-20%',
-            top: '-20%',
-            background: ORB_GRADIENTS[s].outer,
-            filter: 'blur(60px)',
-            pointerEvents: 'none',
-            zIndex: 0,
-            opacity: state === s ? 1 : 0,
-            transition: 'opacity 0.6s ease',
-          }}
-        />
-      ))}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          width: '140%',
+          height: '140%',
+          left: '-20%',
+          top: '-20%',
+          background: gradient.outer,
+          filter: 'blur(60px)',
+          pointerEvents: 'none',
+          zIndex: 0,
+          transition: 'background 1.2s ease',
+        }}
+      />
 
-      {/* Core — fixed 320×320 to stay a true circle in any container shape. */}
-      {states.map(s => (
+      {/* Core — fixed 320×320 to stay a true circle in any container shape.
+         Outer wrapper does the centering (translate); inner element does the
+         breathe scale, so pausing the animation never displaces the orb. */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'absolute',
+          width: '320px',
+          height: '320px',
+          left: '50%',
+          top: '50%',
+          transform: 'translate(-50%, -50%)',
+          pointerEvents: 'none',
+          zIndex: 1,
+        }}
+      >
         <div
-          key={`c-${s}`}
-          aria-hidden="true"
+          className={coreClassName}
           style={{
-            position: 'absolute',
-            width: '320px',
-            height: '320px',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: ORB_GRADIENTS[s].core,
+            width: '100%',
+            height: '100%',
+            background: gradient.core,
             borderRadius: '50%',
-            pointerEvents: 'none',
-            zIndex: 1,
-            opacity: state === s ? 1 : 0,
-            transition: 'opacity 0.6s ease',
+            transition: 'background 1.2s ease',
           }}
         />
-      ))}
+      </div>
 
       {/* Time digits — sit on top. */}
       <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -156,6 +164,9 @@ export default function TimerPage() {
     })
   }, [lastSession, addSession])
 
+  // Aggregate today's sessions by (task_name, ignoring source) — same name
+  // collapses to a single row with summed duration. created_at = most recent
+  // entry for that task, used to order rows newest-first.
   const displaySessions = useMemo(() => {
     const fromCache: DisplaySession[] = todaySessions.map(s => ({
       id: s.id,
@@ -167,15 +178,17 @@ export default function TimerPage() {
     const newOnes = localAdded.filter(s => !cacheIds.has(s.id))
     const all = [...newOnes, ...fromCache]
 
-    const personal = all.filter(s => s.taskName === PERSONAL_FOCUS)
-    const others = all.filter(s => s.taskName !== PERSONAL_FOCUS)
-    if (personal.length <= 1) return all
-    const merged = personal.reduce((acc, cur) => ({
-      ...acc,
-      duration_seconds: acc.duration_seconds + cur.duration_seconds,
-      created_at: cur.created_at > acc.created_at ? cur.created_at : acc.created_at,
-    }))
-    return [merged, ...others]
+    const buckets = new Map<string, DisplaySession>()
+    for (const s of all) {
+      const existing = buckets.get(s.taskName)
+      if (existing) {
+        existing.duration_seconds += s.duration_seconds
+        if (s.created_at > existing.created_at) existing.created_at = s.created_at
+      } else {
+        buckets.set(s.taskName, { ...s })
+      }
+    }
+    return Array.from(buckets.values()).sort((a, b) => (a.created_at < b.created_at ? 1 : -1))
   }, [todaySessions, localAdded])
 
   const activeTaskName = normalizeTaskName(taskName)
@@ -184,17 +197,9 @@ export default function TimerPage() {
 
   const sessionsTotal = displaySessions.reduce((sum, s) => sum + s.duration_seconds, 0)
 
-  // Cumulative refresh every 5s (cheap timer for the footer total)
-  const [totalElapsed, setTotalElapsed] = useState(0)
-  useEffect(() => {
-    if (!isActive) { setTotalElapsed(0); return }
-    setTotalElapsed(elapsed)
-    const interval = setInterval(() => setTotalElapsed(prev => prev + 5), 5000)
-    return () => clearInterval(interval)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isActive])
-
-  const todayTotal = sessionsTotal + (isActive ? totalElapsed : 0)
+  // Footer total — DB-backed sessions plus live elapsed from the running
+  // timer. Ticks each second via useLiveElapsed; no polling.
+  const todayTotal = sessionsTotal + (isActive ? elapsed : 0)
   const showRecords = displaySessions.length > 0 || isActive
 
   // Streak — count consecutive days back from today using profileHistory.
@@ -376,7 +381,7 @@ export default function TimerPage() {
                       alignItems: 'center',
                       gap: 12,
                       padding: '14px 0',
-                      borderBottom: '1px solid rgba(0,0,0,0.04)',
+                      borderBottom: '1px solid rgba(0,0,0,0.08)',
                     }}
                   >
                     <span
@@ -424,7 +429,7 @@ export default function TimerPage() {
           style={{
             marginTop: 80,
             paddingTop: 32,
-            borderTop: '1px solid rgba(0,0,0,0.04)',
+            borderTop: '1px solid rgba(0,0,0,0.08)',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',

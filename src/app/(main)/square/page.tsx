@@ -3,6 +3,7 @@
 import { useState, useEffect, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAppData, type SquarePost } from '@/components/AppDataContext'
+import { avatarAuraGradient } from '@/lib/avatarAura'
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -172,13 +173,13 @@ export default function SquarePage() {
           style={{
             marginBottom: '40px',
             paddingBottom: '20px',
-            borderBottom: '1px solid rgba(0,0,0,0.06)',
+            borderBottom: '1px solid rgba(0,0,0,0.08)',
           }}
         >
           <h1
             style={{
               fontFamily: 'var(--font-serif)',
-              fontSize: '36px',
+              fontSize: '40px',
               fontWeight: 400,
               color: 'var(--text-primary)',
               marginBottom: '6px',
@@ -359,7 +360,7 @@ export default function SquarePage() {
                   style={{
                     paddingBottom: '32px',
                     marginBottom: '32px',
-                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                    borderBottom: '1px solid rgba(0,0,0,0.08)',
                   }}
                 >
                   <div
@@ -375,7 +376,7 @@ export default function SquarePage() {
                         width: '32px',
                         height: '32px',
                         borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.04)',
+                        background: avatarAuraGradient(post.user_id),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -394,6 +395,7 @@ export default function SquarePage() {
                           style={{
                             fontFamily: 'var(--font-sans)',
                             fontSize: '14px',
+                            fontWeight: 500,
                             color: 'var(--text-primary)',
                           }}
                         >

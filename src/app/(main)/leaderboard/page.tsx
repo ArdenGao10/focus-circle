@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type CSSProperties } from 'react'
 import { useAppData, type ActiveTimer } from '@/components/AppDataContext'
+import { avatarAuraGradient } from '@/lib/avatarAura'
 
 function formatHMS(seconds: number): string {
   const h = Math.floor(seconds / 3600)
@@ -87,7 +88,13 @@ export default function LeaderboardPage() {
   const rankById = new Map(filtered.map((entry, index) => [entry.id, index + 1]))
   const myRank = meEntry ? rankById.get(meEntry.id) ?? null : null
   const others = filtered.filter(entry => entry.id !== userId)
-  const totalUsers = filtered.length
+
+  // Live "in focus right now" — count of active_timers rows with state='running'.
+  // active_timers is transient (deleted on session end), so any 'running' row
+  // is a user actively focusing. updated_at would prematurely filter genuine
+  // long sessions because it only refreshes on state transitions, not while
+  // the timer is running, so we don't gate on it.
+  const liveFocusing = activeTimers.filter(t => t.state === 'running').length
 
   const containerStyle: CSSProperties = {
     '--font-serif': 'var(--aura-font-serif)',
@@ -115,14 +122,14 @@ export default function LeaderboardPage() {
             alignItems: 'baseline',
             marginBottom: '24px',
             paddingBottom: '20px',
-            borderBottom: '1px solid rgba(0,0,0,0.06)',
+            borderBottom: '1px solid rgba(0,0,0,0.08)',
           }}
         >
           <div>
             <h1
               style={{
                 fontFamily: 'var(--font-serif)',
-                fontSize: '36px',
+                fontSize: '40px',
                 fontWeight: 400,
                 color: 'var(--text-primary)',
                 marginBottom: '6px',
@@ -138,7 +145,7 @@ export default function LeaderboardPage() {
                 letterSpacing: '0.15em',
               }}
             >
-              今日 · {totalUsers} 人在专注
+              此刻 · {liveFocusing} 人专注中
             </p>
           </div>
 
@@ -195,7 +202,7 @@ export default function LeaderboardPage() {
                   borderRadius: 0,
                   background: 'transparent',
                   overflow: 'hidden',
-                  borderBottom: '1px solid rgba(0,0,0,0.04)',
+                  borderBottom: '1px solid rgba(0,0,0,0.08)',
                 }}
               >
                 <div
@@ -203,7 +210,7 @@ export default function LeaderboardPage() {
                     position: 'absolute',
                     inset: 0,
                     background:
-                      'radial-gradient(ellipse at left center, rgba(168, 213, 186, 0.18) 0%, transparent 60%)',
+                      'radial-gradient(ellipse at left center, rgba(168, 213, 186, 0.28) 0%, transparent 60%)',
                     pointerEvents: 'none',
                   }}
                 />
@@ -213,6 +220,7 @@ export default function LeaderboardPage() {
                     style={{
                       fontFamily: 'var(--font-mono)',
                       fontSize: '13px',
+                      fontWeight: 400,
                       color: 'var(--text-muted)',
                       width: '32px',
                       textAlign: 'center',
@@ -226,8 +234,7 @@ export default function LeaderboardPage() {
                       width: '36px',
                       height: '36px',
                       borderRadius: '50%',
-                      background:
-                        'radial-gradient(circle, rgba(168, 213, 186, 0.4) 0%, rgba(168, 213, 186, 0.15) 70%)',
+                      background: avatarAuraGradient(meEntry.id),
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -280,7 +287,7 @@ export default function LeaderboardPage() {
                     <div
                       style={{
                         height: '2px',
-                        background: 'rgba(0,0,0,0.04)',
+                        background: 'rgba(0,0,0,0.06)',
                         borderRadius: '1px',
                         overflow: 'hidden',
                       }}
@@ -289,7 +296,7 @@ export default function LeaderboardPage() {
                         style={{
                           width: `${Math.min((meEntry.today_seconds / ((meEntry.target_minutes || 120) * 60)) * 100, 100)}%`,
                           height: '100%',
-                          background: 'rgba(111, 169, 137, 0.6)',
+                          background: 'rgba(111, 169, 137, 0.85)',
                         }}
                       />
                     </div>
@@ -300,6 +307,7 @@ export default function LeaderboardPage() {
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: '13px',
+                        fontWeight: 500,
                         color: 'var(--text-secondary)',
                       }}
                     >
@@ -337,13 +345,14 @@ export default function LeaderboardPage() {
                       alignItems: 'center',
                       gap: '16px',
                       padding: '16px 0',
-                      borderBottom: '1px solid rgba(0,0,0,0.04)',
+                      borderBottom: '1px solid rgba(0,0,0,0.08)',
                     }}
                   >
                     <div
                       style={{
                         fontFamily: 'var(--font-mono)',
                         fontSize: '13px',
+                        fontWeight: 400,
                         color: 'var(--text-muted)',
                         width: '32px',
                         textAlign: 'center',
@@ -357,7 +366,7 @@ export default function LeaderboardPage() {
                         width: '36px',
                         height: '36px',
                         borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.04)',
+                        background: avatarAuraGradient(user.id),
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -376,6 +385,7 @@ export default function LeaderboardPage() {
                           style={{
                             fontFamily: 'var(--font-sans)',
                             fontSize: '14px',
+                            fontWeight: 500,
                             color: 'var(--text-primary)',
                             maxWidth: '140px',
                             overflow: 'hidden',
@@ -402,7 +412,7 @@ export default function LeaderboardPage() {
                       <div
                         style={{
                           height: '2px',
-                          background: 'rgba(0,0,0,0.04)',
+                          background: 'rgba(0,0,0,0.06)',
                           borderRadius: '1px',
                           overflow: 'hidden',
                         }}
@@ -411,7 +421,7 @@ export default function LeaderboardPage() {
                           style={{
                             width: `${progress}%`,
                             height: '100%',
-                            background: 'rgba(0,0,0,0.15)',
+                            background: 'rgba(0,0,0,0.28)',
                           }}
                         />
                       </div>
@@ -422,6 +432,7 @@ export default function LeaderboardPage() {
                         style={{
                           fontFamily: 'var(--font-mono)',
                           fontSize: '13px',
+                          fontWeight: 500,
                           color: 'var(--text-secondary)',
                         }}
                       >

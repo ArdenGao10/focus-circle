@@ -55,6 +55,15 @@
   --aura-green-solid: #5C8A70;
   --aura-warm-solid: #C99765;
 
+  /* Aura state palettes — focus / paused / complete. Used by orb gradients
+     so timer state changes shift the color while keeping the same shape. */
+  --aura-focus-primary: rgba(111, 169, 137, 0.5);
+  --aura-focus-soft: rgba(168, 213, 186, 0.25);
+  --aura-paused-primary: rgba(176, 156, 217, 0.45);
+  --aura-paused-soft: rgba(197, 181, 221, 0.22);
+  --aura-complete-primary: rgba(220, 178, 138, 0.45);
+  --aura-complete-soft: rgba(244, 196, 161, 0.22);
+
   /* Typography stacks for the new system */
   --aura-font-serif: var(--font-cormorant), 'LXGW WenKai', '霞鹜文楷', 'Source Han Serif SC', 'Noto Serif SC', 'Songti SC', Georgia, serif;
   --aura-font-sans: var(--font-inter), 'PingFang SC', 'Hiragino Sans GB', 'Source Han Sans SC', system-ui, sans-serif;
@@ -253,6 +262,22 @@ body {
 .aura-breathe {
   animation: aura-breathe 6s ease-in-out infinite;
   will-change: transform, opacity;
+}
+
+/* Orb core breathe — extremely slow, subtle scale on the timer orb's core
+   layer. Paired with `.aura-breathe-paused` to halt while the timer pauses.
+   Applied to a positioned wrapper, so this transform only does scale —
+   centering lives on the parent. */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.04); }
+}
+.aura-orb-breathe {
+  animation: breathe 7s ease-in-out infinite;
+  will-change: transform;
+}
+.aura-breathe-paused {
+  animation-play-state: paused;
 }
 
 /* Text-action hover: underline expands 60 → 100px (default). */

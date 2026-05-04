@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useAppData } from '@/components/AppDataContext'
 import { useTimer, useLiveElapsed } from '@/components/TimerContext'
+import { avatarAuraGradient } from '@/lib/avatarAura'
 import {
   fetchSessionsSince,
   fetchCompletedTaskCount,
@@ -216,7 +217,7 @@ export default function ProfilePage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
               width: 56, height: 56, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(168, 213, 186, 0.3) 0%, rgba(168, 213, 186, 0.1) 70%)',
+              background: avatarAuraGradient(userId),
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontFamily: 'var(--aura-font-serif)',
               fontSize: 24, color: 'var(--aura-text-primary)',
@@ -226,7 +227,7 @@ export default function ProfilePage() {
             <div>
               <h1 style={{
                 fontFamily: 'var(--aura-font-serif)',
-                fontSize: 28, fontWeight: 400, lineHeight: 1.1,
+                fontSize: 40, fontWeight: 400, lineHeight: 1.1,
                 color: 'var(--aura-text-primary)',
                 margin: 0, marginBottom: 4,
               }}>
@@ -247,18 +248,18 @@ export default function ProfilePage() {
         <section style={{
           display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
           marginBottom: 48,
-          borderTop: '1px solid rgba(0,0,0,0.06)',
-          borderBottom: '1px solid rgba(0,0,0,0.06)',
+          borderTop: '1px solid rgba(0,0,0,0.08)',
+          borderBottom: '1px solid rgba(0,0,0,0.08)',
         }}>
           {bigStats.map((stat, i) => (
             <div key={stat.label} style={{
               padding: '20px 0', textAlign: 'center',
-              borderRight: i < bigStats.length - 1 ? '1px solid rgba(0,0,0,0.06)' : 'none',
+              borderRight: i < bigStats.length - 1 ? '1px solid rgba(0,0,0,0.08)' : 'none',
             }}>
               <div style={{
                 fontFamily: 'var(--aura-font-serif)',
                 fontSize: stat.value.length > 5 ? 20 : 32,
-                fontWeight: 300,
+                fontWeight: 400,
                 color: 'var(--aura-text-primary)',
                 marginBottom: 4,
                 fontVariantNumeric: 'tabular-nums lining-nums',
@@ -397,7 +398,7 @@ export default function ProfilePage() {
                         padding: '14px 0',
                         background: 'transparent',
                         border: 'none',
-                        borderBottom: '1px solid rgba(0,0,0,0.04)',
+                        borderBottom: '1px solid rgba(0,0,0,0.08)',
                         textAlign: 'left',
                         cursor: 'pointer',
                       }}
@@ -412,12 +413,12 @@ export default function ProfilePage() {
                       </span>
                       <div style={{
                         flex: 1, height: 4,
-                        background: 'rgba(0,0,0,0.04)',
+                        background: 'rgba(0,0,0,0.06)',
                         borderRadius: 2, overflow: 'hidden',
                       }}>
                         <div style={{
                           width: `${progress}%`, height: '100%',
-                          background: 'rgba(111, 169, 137, 0.5)', borderRadius: 2,
+                          background: 'rgba(111, 169, 137, 0.85)', borderRadius: 2,
                         }} />
                       </div>
                       <span style={{
@@ -502,7 +503,7 @@ export default function ProfilePage() {
         {/* 5. Actions — text-style */}
         <section style={{
           display: 'flex', flexDirection: 'column', gap: 18, alignItems: 'center',
-          paddingTop: 32, borderTop: '1px solid rgba(0,0,0,0.04)',
+          paddingTop: 32, borderTop: '1px solid rgba(0,0,0,0.08)',
         }}>
           <button
             onClick={() => router.push('/onboarding')}
