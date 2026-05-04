@@ -15,7 +15,11 @@ const cnButton: React.CSSProperties = {
   fontWeight: 500,
 }
 
-export default function DailyTasks() {
+interface DailyTasksProps {
+  titleStyle?: React.CSSProperties
+}
+
+export default function DailyTasks({ titleStyle }: DailyTasksProps) {
   const [newTask, setNewTask] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showAIModal, setShowAIModal] = useState(false)
@@ -97,32 +101,29 @@ export default function DailyTasks() {
   const todayTasks = tasks.filter(t => t.date === today)
   const completedCount = todayTasks.filter(t => t.completed).length
   const suggestions = getSmartSuggestions(goal, todayTasks.map(t => t.title))
-  const progressPct = todayTasks.length > 0 ? (completedCount / todayTasks.length) * 100 : 0
 
   if (!ready) {
     return (
-      <div
-        className="p-6"
-        style={{
-          background: 'var(--aura-bg-elevated)',
-          border: '1px solid rgba(0,0,0,0.06)',
-          borderRadius: 24,
-        }}
-      >
+      <div style={{ marginTop: 40 }}>
         <div className="h-3 w-24 animate-pulse" style={{ background: 'rgba(0,0,0,0.06)' }} />
       </div>
     )
   }
 
+  const mergedTitleStyle: React.CSSProperties = {
+    fontFamily: 'var(--aura-font-sans)',
+    fontSize: 12,
+    fontWeight: 500,
+    letterSpacing: '0.18em',
+    color: 'var(--aura-text-muted)',
+    display: 'flex',
+    alignItems: 'baseline',
+    gap: 10,
+    ...titleStyle,
+  }
+
   return (
-    <div
-      className="p-6"
-      style={{
-        background: 'var(--aura-bg-elevated)',
-        border: '1px solid rgba(0,0,0,0.06)',
-        borderRadius: 24,
-      }}
-    >
+    <div>
       {errorMsg && (
         <div
           className="mb-3 px-3 py-2"
@@ -138,66 +139,39 @@ export default function DailyTasks() {
         </div>
       )}
 
-      {/* Header: serif title + mono progress count + AI Suggest text-link */}
-      <div className="flex items-end justify-between mb-5">
-        <div className="flex items-baseline gap-3">
-          <h2
+      {/* Header: title + count + AI 推荐 */}
+      <div className="flex items-baseline justify-between" style={{ marginTop: 48, marginBottom: 20 }}>
+        <h3 style={mergedTitleStyle}>
+          今日任务
+          <span
             style={{
-              fontFamily: 'var(--aura-font-serif)',
-              fontSize: 24,
-              fontWeight: 400,
-              lineHeight: 1.1,
-              color: 'var(--aura-text-primary)',
+              fontFamily: 'var(--aura-font-mono)',
+              fontSize: 11,
+              color: 'var(--aura-text-muted)',
+              letterSpacing: '0.1em',
+              fontVariantNumeric: 'tabular-nums lining-nums',
             }}
           >
-            今日任务
-          </h2>
-          {todayTasks.length > 0 && (
-            <span
-              style={{
-                fontFamily: 'var(--aura-font-mono)',
-                fontSize: 14,
-                color: 'var(--aura-text-muted)',
-                fontVariantNumeric: 'tabular-nums lining-nums',
-              }}
-            >
-              {completedCount}/{todayTasks.length}
-            </span>
-          )}
-        </div>
+            {todayTasks.length > 0 ? `${completedCount}/${todayTasks.length}` : '0/0'}
+          </span>
+        </h3>
         <button
           onClick={() => setShowAIModal(true)}
           style={{
             ...cnButton,
-            fontSize: 13,
+            fontSize: 12,
+            letterSpacing: '0.18em',
             color: 'var(--aura-text-primary)',
             background: 'transparent',
             border: 'none',
             borderBottom: '1px solid var(--aura-text-primary)',
-            paddingBottom: 3,
+            paddingBottom: 2,
             cursor: 'pointer',
           }}
         >
           AI 推荐
         </button>
       </div>
-
-      {/* Progress bar — 2px, gradient fill */}
-      {todayTasks.length > 0 && (
-        <div
-          className="mb-6 overflow-hidden"
-          style={{ height: 2, background: 'rgba(0,0,0,0.06)', borderRadius: 1 }}
-        >
-          <div
-            style={{
-              height: '100%',
-              width: `${progressPct}%`,
-              background: 'linear-gradient(90deg, var(--aura-green-solid) 0%, var(--aura-warm-solid) 100%)',
-              transition: 'width 0.5s ease',
-            }}
-          />
-        </div>
-      )}
 
       {showSuggestions && suggestions.length > 0 && (
         <div className="mb-5 flex flex-wrap gap-2">
@@ -222,24 +196,29 @@ export default function DailyTasks() {
         </div>
       )}
 
-      {/* Tasks list */}
-      <ul className="mb-6">
+      {/* Tasks list — padding-based rows mirroring 今日记录 */}
+      <div>
         {todayTasks.map((task) => {
           const isActiveTask = isTimerBusy && taskName === task.title
           return (
-            <li
+            <div
               key={task.id}
-              className="group flex items-center gap-3"
-              style={{ height: 56, borderBottom: '1px solid rgba(0,0,0,0.04)' }}
+              className="group"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                padding: '14px 0',
+                borderBottom: '1px solid rgba(0,0,0,0.04)',
+              }}
             >
               {/* Checkbox */}
               <button
                 onClick={() => toggleTask(task.id, task.completed)}
                 aria-label={task.completed ? '取消完成' : '标记完成'}
                 style={{
-                  width: 18, height: 18, borderRadius: '50%',
-                  background: task.completed ? 'var(--aura-green-solid)' : 'transparent',
-                  opacity: task.completed ? 0.4 : 1,
+                  width: 16, height: 16, borderRadius: '50%',
+                  background: task.completed ? 'var(--aura-text-primary)' : 'transparent',
                   border: task.completed ? 'none' : '1px solid rgba(0,0,0,0.2)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
@@ -247,7 +226,7 @@ export default function DailyTasks() {
                 }}
               >
                 {task.completed && (
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 13l4 4L19 7" />
                   </svg>
                 )}
@@ -257,9 +236,10 @@ export default function DailyTasks() {
                 className="flex-1 truncate"
                 style={{
                   fontFamily: 'var(--aura-font-sans)',
-                  fontSize: 16,
-                  color: task.completed ? 'var(--aura-text-muted)' : 'var(--aura-text-primary)',
+                  fontSize: 15,
+                  color: 'var(--aura-text-primary)',
                   textDecoration: task.completed ? 'line-through' : 'none',
+                  opacity: task.completed ? 0.4 : 1,
                 }}
               >
                 {task.title}
@@ -316,49 +296,61 @@ export default function DailyTasks() {
               >
                 ×
               </button>
-            </li>
+            </div>
           )
         })}
-      </ul>
 
-      {/* Add task — underline-only input + ADD text-button */}
-      <form
-        onSubmit={(e) => { e.preventDefault(); addTask(newTask) }}
-        className="flex items-end gap-4"
-      >
-        <input
-          type="text"
-          placeholder="写下新任务..."
-          value={newTask}
-          onChange={(e) => setNewTask(e.target.value)}
-          className="flex-1 focus:outline-none"
+        {/* Add task — dashed-circle marker + input + 添加 */}
+        <form
+          onSubmit={(e) => { e.preventDefault(); addTask(newTask) }}
           style={{
-            fontFamily: 'var(--aura-font-sans)',
-            fontSize: 14,
-            color: 'var(--aura-text-primary)',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '1px solid rgba(0,0,0,0.1)',
-            padding: '8px 0',
-          }}
-        />
-        <button
-          type="submit"
-          disabled={!newTask.trim()}
-          style={{
-            ...cnButton,
-            fontSize: 13,
-            color: newTask.trim() ? 'var(--aura-text-primary)' : 'var(--aura-text-muted)',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: `1px solid ${newTask.trim() ? 'var(--aura-text-primary)' : 'rgba(0,0,0,0.15)'}`,
-            paddingBottom: 3,
-            cursor: newTask.trim() ? 'pointer' : 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            padding: '14px 0',
           }}
         >
-          添加
-        </button>
-      </form>
+          <span
+            style={{
+              width: 16, height: 16, borderRadius: '50%',
+              border: '1px dashed rgba(0,0,0,0.2)',
+              flexShrink: 0,
+            }}
+          />
+          <input
+            type="text"
+            placeholder="写下新任务..."
+            value={newTask}
+            onChange={(e) => setNewTask(e.target.value)}
+            className="flex-1 focus:outline-none"
+            style={{
+              fontFamily: 'var(--aura-font-sans)',
+              fontSize: 15,
+              color: 'var(--aura-text-primary)',
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+            }}
+          />
+          <button
+            type="submit"
+            disabled={!newTask.trim()}
+            style={{
+              ...cnButton,
+              fontSize: 12,
+              letterSpacing: '0.18em',
+              color: newTask.trim() ? 'var(--aura-text-primary)' : 'var(--aura-text-muted)',
+              background: 'transparent',
+              border: 'none',
+              borderBottom: `1px solid ${newTask.trim() ? 'var(--aura-text-primary)' : 'rgba(0,0,0,0.15)'}`,
+              paddingBottom: 2,
+              cursor: newTask.trim() ? 'pointer' : 'not-allowed',
+            }}
+          >
+            添加
+          </button>
+        </form>
+      </div>
 
       {showAIModal && (
         <AITaskModal

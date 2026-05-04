@@ -41,72 +41,86 @@ function normalizeTaskName(taskName: string | null | undefined): string {
   return taskName?.trim() || PERSONAL_FOCUS
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Aura halo — dual-layer, edge-dissolving. Outer 500px blur(40)
-   ambient glow + inner 320px gradient that fades to 0 at 95%.
-   No box-shadow, no border. Three states crossfade by opacity.
-   ───────────────────────────────────────────────────────────── */
+// Aura halo — small body, oversized diffuse glow. Outer layer is
+// 140% sized with negative offset so blur bleeds beyond the 280px
+// frame; core is 55% with a gradient that fades to transparent at
+// 70%, leaving no visible rim. No ancestor may set `overflow:hidden`.
 
-// Per-state gradients, captured at module scope so re-renders don't
-// rebuild the strings.
 const ORB_GRADIENTS: Record<TimerVisualState, { outer: string; core: string }> = {
   idle: {
-    outer: 'radial-gradient(circle, rgba(168, 213, 186, 0.20) 0%, rgba(168, 213, 186, 0.08) 40%, transparent 70%)',
-    core:  'radial-gradient(circle, rgba(168, 213, 186, 0.45) 0%, rgba(168, 213, 186, 0.25) 35%, rgba(168, 213, 186, 0.10) 65%, transparent 95%)',
+    outer: 'radial-gradient(circle, rgba(168, 213, 186, 0.30) 0%, rgba(168, 213, 186, 0.10) 35%, transparent 70%)',
+    core:  'radial-gradient(circle, rgba(111, 169, 137, 0.40) 0%, rgba(168, 213, 186, 0.20) 45%, transparent 70%)',
   },
   running: {
-    outer: 'radial-gradient(circle, rgba(168, 213, 186, 0.35) 0%, rgba(168, 213, 186, 0.15) 40%, transparent 70%)',
-    core:  'radial-gradient(circle, rgba(111, 169, 137, 0.50) 0%, rgba(168, 213, 186, 0.40) 35%, rgba(168, 213, 186, 0.15) 65%, transparent 95%)',
+    outer: 'radial-gradient(circle, rgba(168, 213, 186, 0.35) 0%, rgba(168, 213, 186, 0.12) 35%, transparent 70%)',
+    core:  'radial-gradient(circle, rgba(111, 169, 137, 0.50) 0%, rgba(168, 213, 186, 0.25) 45%, transparent 70%)',
   },
   paused: {
-    outer: 'radial-gradient(circle, rgba(197, 181, 221, 0.32) 0%, rgba(197, 181, 221, 0.12) 40%, transparent 70%)',
-    core:  'radial-gradient(circle, rgba(160, 140, 195, 0.42) 0%, rgba(197, 181, 221, 0.30) 35%, rgba(197, 181, 221, 0.12) 65%, transparent 95%)',
+    outer: 'radial-gradient(circle, rgba(197, 181, 221, 0.30) 0%, rgba(197, 181, 221, 0.10) 35%, transparent 70%)',
+    core:  'radial-gradient(circle, rgba(160, 140, 195, 0.42) 0%, rgba(197, 181, 221, 0.22) 45%, transparent 70%)',
   },
 }
 
 function AuraHalo({ state, children }: { state: TimerVisualState; children: React.ReactNode }) {
   const states: TimerVisualState[] = ['idle', 'running', 'paused']
 
-  const outerLayer = (s: TimerVisualState): React.CSSProperties => ({
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: 500,
-    height: 500,
-    transform: 'translate(-50%, -50%)',
-    background: ORB_GRADIENTS[s].outer,
-    filter: 'blur(40px)',
-    pointerEvents: 'none',
-    opacity: state === s ? 1 : 0,
-    transition: 'opacity 0.6s ease',
-  })
-
-  const coreLayer = (s: TimerVisualState): React.CSSProperties => ({
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    width: 320,
-    height: 320,
-    transform: 'translate(-50%, -50%)',
-    background: ORB_GRADIENTS[s].core,
-    borderRadius: '50%',
-    pointerEvents: 'none',
-    opacity: state === s ? 1 : 0,
-    transition: 'opacity 0.6s ease',
-  })
-
   return (
     <div
-      className="relative flex items-center justify-center mx-auto"
-      style={{ width: 320, height: 320, maxWidth: '60vw', maxHeight: '60vw' }}
+      style={{
+        position: 'relative',
+        width: '100%',
+        aspectRatio: '1 / 1',
+        maxWidth: 280,
+        margin: '0 auto',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
     >
-      {/* Both layers breathe together; time digits stay still. */}
-      <div className="aura-breathe" style={{ position: 'absolute', top: '50%', left: '50%', width: 0, height: 0, pointerEvents: 'none' }}>
-        {states.map(s => <div key={`o-${s}`} style={outerLayer(s)} />)}
-        {states.map(s => <div key={`c-${s}`} style={coreLayer(s)} />)}
-      </div>
+      {/* Outer diffuse glow — oversized + negative offset bleeds beyond container. */}
+      {states.map(s => (
+        <div
+          key={`o-${s}`}
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            width: '140%',
+            height: '140%',
+            left: '-20%',
+            top: '-20%',
+            background: ORB_GRADIENTS[s].outer,
+            filter: 'blur(60px)',
+            pointerEvents: 'none',
+            zIndex: 0,
+            opacity: state === s ? 1 : 0,
+            transition: 'opacity 0.6s ease',
+          }}
+        />
+      ))}
 
-      <div className="relative z-10 flex items-center justify-center">
+      {/* Core — 55% size, gradient fades fully transparent at 70%. */}
+      {states.map(s => (
+        <div
+          key={`c-${s}`}
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            width: '55%',
+            height: '55%',
+            left: '22.5%',
+            top: '22.5%',
+            background: ORB_GRADIENTS[s].core,
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            zIndex: 1,
+            opacity: state === s ? 1 : 0,
+            transition: 'opacity 0.6s ease',
+          }}
+        />
+      ))}
+
+      {/* Time digits — sit on top. */}
+      <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {children}
       </div>
     </div>
@@ -201,15 +215,30 @@ export default function TimerPage() {
   const primaryLabel = state === 'idle' ? '开始' : state === 'running' ? '暂停' : '继续'
   const onPrimary = state === 'idle' ? () => start() : state === 'running' ? pause : resume
 
+  // Unified section-title style — used by 今日记录 and (inside) 今日任务.
+  const sectionTitleStyle: React.CSSProperties = {
+    fontFamily: 'var(--aura-font-sans)',
+    fontSize: 12,
+    fontWeight: 500,
+    letterSpacing: '0.18em',
+    color: 'var(--aura-text-muted)',
+  }
+
   return (
     <div
       className="relative min-h-full"
       style={{ background: 'var(--aura-bg-primary)', color: 'var(--aura-text-primary)' }}
     >
-      {/* ─── Hero: ~one screen, generous whitespace ─── */}
-      <section className="flex flex-col items-center px-6 pt-5 pb-16">
+      <main
+        style={{
+          maxWidth: 600,
+          margin: '0 auto',
+          padding: '0 24px 24px',
+        }}
+      >
         {/* 1. Top wordmark */}
         <div
+          className="text-center"
           style={{
             fontFamily: 'var(--aura-font-mono)',
             fontSize: 11,
@@ -247,13 +276,13 @@ export default function TimerPage() {
           {formatAuraDate(today)} · 静而后能定
         </div>
 
-        {/* 4. The halo + time (halo only contains the digits) */}
-        <div className="mt-6">
+        {/* 4. Halo (max 400 — never reaches phone edges) */}
+        <div className="mt-8">
           <AuraHalo state={state}>
             <div
               style={{
                 fontFamily: 'var(--aura-font-serif)',
-                fontSize: 'clamp(48px, 14vw, 72px)',
+                fontSize: 52,
                 fontWeight: 300,
                 lineHeight: 1,
                 color: 'var(--aura-text-primary)',
@@ -266,9 +295,9 @@ export default function TimerPage() {
           </AuraHalo>
         </div>
 
-        {/* Active task — independent line, below the halo */}
+        {/* 5. Active task — independent line, below the halo */}
         {hasNamedTask && (
-          <div className="mt-8 flex items-center justify-center gap-2">
+          <div className="mt-6 flex items-center justify-center gap-2">
             <span
               style={{
                 width: 4, height: 4, borderRadius: '50%',
@@ -290,7 +319,7 @@ export default function TimerPage() {
           </div>
         )}
 
-        {/* 5. Operation area — Chinese text-buttons */}
+        {/* 6. Operation area — Chinese text-buttons */}
         <div className="mt-10 flex flex-col items-center">
           <button
             onClick={onPrimary}
@@ -310,7 +339,6 @@ export default function TimerPage() {
             {primaryLabel}
           </button>
 
-          {/* Discreet end link — visible only during an active session */}
           {isActive && (
             <button
               onClick={end}
@@ -330,103 +358,87 @@ export default function TimerPage() {
             </button>
           )}
         </div>
-      </section>
 
-      {/* ─── Today's records (kept functional, neutralized look) ─── */}
-      {showRecords && (
-        <section className="px-6 pb-10 max-w-md mx-auto w-full">
-          <div className="flex items-baseline justify-between mb-4">
-            <span
-              style={{
-                fontFamily: 'var(--aura-font-sans)',
-                fontSize: 13,
-                letterSpacing: '0.15em',
-                color: 'var(--aura-text-secondary)',
-              }}
-            >
-              今日记录
-            </span>
-            <span
-              style={{
-                fontFamily: 'var(--aura-font-mono)',
-                fontSize: 12,
-                color: 'var(--aura-text-muted)',
-                fontVariantNumeric: 'tabular-nums lining-nums',
-              }}
-            >
-              {formatTime(todayTotal)}
-            </span>
-          </div>
-          <div className="space-y-3">
-            {displaySessions.map((s) => {
-              const isLive = isActive && s.taskName === activeTaskName
-              const totalSec = isLive ? s.duration_seconds + elapsed : s.duration_seconds
-              return (
-                <div key={s.id} className="flex items-center gap-3 py-1">
-                  <span
+        {/* 7. 今日记录 — section, padding-based rows with thin dividers. */}
+        {showRecords && (
+          <section>
+            <h3 style={{ ...sectionTitleStyle, marginTop: 60, marginBottom: 20 }}>今日记录</h3>
+            <div>
+              {displaySessions.map((s) => {
+                const isLive = isActive && s.taskName === activeTaskName
+                const totalSec = isLive ? s.duration_seconds + elapsed : s.duration_seconds
+                return (
+                  <div
+                    key={s.id}
                     style={{
-                      width: 6, height: 6, borderRadius: '50%',
-                      background: 'var(--aura-green-solid)',
-                      opacity: isLive ? 1 : 0.6,
-                      flexShrink: 0,
-                    }}
-                  />
-                  <span
-                    className="flex-1 truncate"
-                    style={{
-                      fontFamily: 'var(--aura-font-sans)',
-                      fontSize: 14,
-                      color: isLive ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 12,
+                      padding: '14px 0',
+                      borderBottom: '1px solid rgba(0,0,0,0.04)',
                     }}
                   >
-                    {s.taskName}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--aura-font-mono)',
-                      fontSize: 12,
-                      color: 'var(--aura-text-secondary)',
-                      fontVariantNumeric: 'tabular-nums lining-nums',
-                    }}
-                  >
-                    {formatTime(totalSec)}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </section>
-      )}
-
-      <section className="px-6 pb-10 max-w-md mx-auto w-full">
-        <DailyTasks />
-      </section>
-
-      {/* ─── Footer status bar — in document flow, brand line only ─── */}
-      <div
-        className="flex justify-center items-center gap-2 px-6 pb-12 pt-6"
-        style={{
-          fontFamily: 'var(--aura-font-mono)',
-          fontSize: 10,
-          letterSpacing: '0.15em',
-          color: 'var(--aura-text-muted)',
-          fontVariantNumeric: 'tabular-nums lining-nums',
-        }}
-      >
-        <span>FOCUS.CIRCLE</span>
-        <span>·</span>
-        <span style={{ fontFamily: 'var(--aura-font-sans)', letterSpacing: '0.1em' }}>
-          今日 {formatTime(todayTotal)}
-        </span>
-        {streakDays > 0 && (
-          <>
-            <span>·</span>
-            <span style={{ fontFamily: 'var(--aura-font-sans)', letterSpacing: '0.1em' }}>
-              连续 {streakDays} 天
-            </span>
-          </>
+                    <span
+                      style={{
+                        width: 5, height: 5, borderRadius: '50%',
+                        background: 'var(--aura-green-solid)',
+                        opacity: isLive ? 0.9 : 0.5,
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span
+                      className="flex-1 truncate"
+                      style={{
+                        fontFamily: 'var(--aura-font-sans)',
+                        fontSize: 15,
+                        color: 'var(--aura-text-primary)',
+                      }}
+                    >
+                      {s.taskName}
+                    </span>
+                    <span
+                      style={{
+                        fontFamily: 'var(--aura-font-mono)',
+                        fontSize: 12,
+                        color: 'var(--aura-text-muted)',
+                        fontVariantNumeric: 'tabular-nums lining-nums',
+                      }}
+                    >
+                      {formatTime(totalSec)}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
         )}
-      </div>
+
+        {/* 8. 今日任务 — section, not card. Title rendered here for symmetry. */}
+        <section>
+          <DailyTasks titleStyle={sectionTitleStyle} />
+        </section>
+
+        {/* 9. Footer brand line */}
+        <footer
+          style={{
+            marginTop: 80,
+            paddingTop: 32,
+            borderTop: '1px solid rgba(0,0,0,0.04)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontFamily: 'var(--aura-font-mono)',
+            fontSize: 11,
+            letterSpacing: '0.15em',
+            color: 'var(--aura-text-muted)',
+            fontVariantNumeric: 'tabular-nums lining-nums',
+          }}
+        >
+          <span>FOCUS.CIRCLE</span>
+          <span>今日 {formatTime(todayTotal)}</span>
+          <span>{streakDays > 0 ? `连续 ${streakDays} 天` : '连续 0 天'}</span>
+        </footer>
+      </main>
     </div>
   )
 }
