@@ -6,10 +6,10 @@ import { useEffect } from 'react'
 import { useTimer } from './TimerContext'
 
 const tabs = [
-  { href: '/',            zh: '计时', en: 'TIMER' },
-  { href: '/leaderboard', zh: '排行', en: 'RANK'  },
-  { href: '/square',      zh: '广场', en: 'SQUARE'},
-  { href: '/profile',     zh: '我的', en: 'ME'    },
+  { href: '/',            label: '计时' },
+  { href: '/leaderboard', label: '排行榜' },
+  { href: '/square',      label: '广场' },
+  { href: '/profile',     label: '我的' },
 ]
 
 export default function BottomNav() {
@@ -28,11 +28,14 @@ export default function BottomNav() {
     <nav
       className="fixed bottom-0 left-0 right-0 pb-[env(safe-area-inset-bottom)]"
       style={{
-        background: 'var(--aura-bg-elevated)',
-        borderTop: '1px solid rgba(0,0,0,0.06)',
+        background: 'rgba(255, 255, 255, 0.85)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: '1px solid rgba(0, 0, 0, 0.04)',
+        zIndex: 50,
       }}
     >
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-4">
+      <div className="flex items-center justify-around max-w-lg mx-auto" style={{ height: 64 }}>
         {tabs.map((tab) => {
           const active = pathname === tab.href
           const isTimer = tab.href === '/'
@@ -40,58 +43,49 @@ export default function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className="relative flex flex-col items-center justify-center gap-1"
-              style={{ minWidth: 56 }}
+              className="relative flex flex-col items-center justify-center"
+              style={{ gap: 6, minWidth: 56, padding: '4px 8px' }}
             >
-              {/* Chinese label */}
               <span
                 style={{
-                  fontFamily: 'var(--aura-font-sans)',
-                  fontSize: 14,
-                  color: active ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                  fontFamily: active ? 'var(--aura-font-serif)' : 'var(--aura-font-sans)',
+                  fontSize: active ? 15 : 13,
+                  fontWeight: 400,
+                  color: active ? 'var(--aura-text-primary)' : 'var(--aura-text-muted)',
+                  letterSpacing: '0.05em',
                   position: 'relative',
+                  transition: 'color 0.3s ease',
                 }}
               >
-                {tab.zh}
-                {/* Live-timer indicator: tiny dot, no background pill */}
+                {tab.label}
+                {/* Live timer indicator: tiny green dot, no halo (nav stays quiet) */}
                 {isTimer && isTimerRunning && (
                   <span
                     aria-hidden="true"
-                    className="absolute"
                     style={{
-                      top: -2, right: -8,
-                      width: 5, height: 5, borderRadius: '50%',
+                      position: 'absolute',
+                      top: -2,
+                      right: -8,
+                      width: 5,
+                      height: 5,
+                      borderRadius: '50%',
                       background: 'var(--aura-green-solid)',
                     }}
                   />
                 )}
               </span>
 
-              {/* English label */}
+              {/* Active indicator: 4px dot beneath the label */}
               <span
+                aria-hidden="true"
                 style={{
-                  fontFamily: 'var(--aura-font-mono)',
-                  fontSize: 9,
-                  letterSpacing: '0.3em',
-                  color: 'var(--aura-text-muted)',
-                  textTransform: 'uppercase',
+                  width: 4,
+                  height: 4,
+                  borderRadius: '50%',
+                  background: active ? 'var(--aura-text-primary)' : 'transparent',
+                  transition: 'background 0.3s ease',
                 }}
-              >
-                {tab.en}
-              </span>
-
-              {/* Active underline — width matches the Chinese label (text-only, 14px → ~28px for two CJK chars) */}
-              {active && (
-                <span
-                  className="absolute"
-                  style={{
-                    bottom: -6,
-                    height: 2,
-                    width: 28,
-                    background: 'var(--aura-green-solid)',
-                  }}
-                />
-              )}
+              />
             </Link>
           )
         })}

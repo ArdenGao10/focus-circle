@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Flower } from './Botanicals'
 
 interface TaskResult {
   task: string
@@ -19,6 +18,19 @@ interface AITaskModalProps {
   onClose: () => void
   onAddTasks: (tasks: string[]) => void
 }
+
+const cnButton = (enabled: boolean): React.CSSProperties => ({
+  fontFamily: 'var(--aura-font-sans)',
+  fontSize: 14,
+  fontWeight: 500,
+  letterSpacing: '0.2em',
+  color: enabled ? 'var(--aura-text-primary)' : 'var(--aura-text-muted)',
+  background: 'transparent',
+  border: 'none',
+  borderBottom: `1px solid ${enabled ? 'var(--aura-text-primary)' : 'rgba(0,0,0,0.15)'}`,
+  paddingBottom: 4,
+  cursor: enabled ? 'pointer' : 'not-allowed',
+})
 
 export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITaskModalProps) {
   const [goal, setGoal] = useState('')
@@ -64,11 +76,11 @@ export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITask
         setSelected(new Set(data.today.map((_: TaskResult, i: number) => i)))
       } else {
         setRetryCount(c => c + 1)
-        setError('AI返回格式错误，请重试')
+        setError('AI 返回格式错误,请重试')
       }
     } catch {
       setRetryCount(c => c + 1)
-      setError('网络错误，请重试')
+      setError('网络错误,请重试')
     } finally {
       setLoading(false)
     }
@@ -92,145 +104,312 @@ export default function AITaskModal({ defaultGoal, onClose, onAddTasks }: AITask
     onClose()
   }
 
+  const placeholder = defaultGoal
+    ? `例如:我正在${defaultGoal},帮我规划今天的学习任务`
+    : '例如:我正在备考雅思,帮我规划今天的学习任务'
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-ink/20 backdrop-blur-sm px-4 pb-4 sm:pb-0" onClick={onClose}>
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.25)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        padding: 16,
+      }}
+    >
       <div
-        className="relative bg-paper rounded-2xl w-full max-w-sm shadow-xl border border-cream animate-in paper-texture overflow-hidden max-h-[80vh] flex flex-col"
         onClick={e => e.stopPropagation()}
+        style={{
+          background: 'var(--aura-bg-elevated)',
+          borderRadius: 16,
+          padding: '40px 32px 32px',
+          width: '100%',
+          maxWidth: 480,
+          maxHeight: '85vh',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.08)',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+        }}
       >
-        {/* Washi tape */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-20 h-3 bg-lavender-light opacity-60 -translate-y-1 rounded-b-sm" />
+        {/* Close × */}
+        <button
+          onClick={onClose}
+          aria-label="关闭"
+          style={{
+            position: 'absolute',
+            top: 16,
+            right: 18,
+            background: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--aura-text-muted)',
+            fontSize: 22,
+            fontWeight: 200,
+            lineHeight: 1,
+            padding: 4,
+          }}
+        >
+          ×
+        </button>
 
         {/* Header */}
-        <div className="p-5 pb-3 pt-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Flower className="w-4 h-4 text-lavender" />
-            <h2 className="text-base font-bold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
-              AI 拆解任务
-            </h2>
-          </div>
-          <p className="text-xs text-ink-light">告诉 AI 你的大目标，帮你拆解成今日小任务</p>
-        </div>
+        <h2
+          style={{
+            fontFamily: 'var(--aura-font-serif)',
+            fontSize: 28,
+            fontWeight: 400,
+            color: 'var(--aura-text-primary)',
+            letterSpacing: '0.02em',
+            marginBottom: 8,
+          }}
+        >
+          AI 拆解任务
+        </h2>
+        <p
+          style={{
+            fontFamily: 'var(--aura-font-sans)',
+            fontSize: 14,
+            color: 'var(--aura-text-secondary)',
+            lineHeight: 1.6,
+            marginBottom: 32,
+          }}
+        >
+          告诉 AI 你的大目标,帮你拆解成今日小任务
+        </p>
 
-        {/* Content */}
-        <div className="px-5 pb-5 flex-1 overflow-y-auto space-y-4">
-          {/* Input */}
+        {/* Scrollable body */}
+        <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+          {/* Input phase */}
           {!result && (
             <>
               <textarea
                 value={goal}
                 onChange={e => setGoal(e.target.value)}
-                placeholder={defaultGoal ? `例如：我正在${defaultGoal}，帮我规划今天的学习任务` : '例如：我要在3个月内通过雅思6.5'}
+                placeholder={placeholder}
                 rows={3}
-                className="w-full text-sm px-3 py-2.5 bg-paper-warm border border-cream rounded-xl focus:outline-none focus:border-lavender resize-none text-ink"
-                style={{ fontFamily: "'Noto Serif SC', serif" }}
                 disabled={loading}
+                onFocus={(e) => { e.currentTarget.style.borderBottomColor = 'var(--aura-text-primary)' }}
+                onBlur={(e) => { e.currentTarget.style.borderBottomColor = '#E5E5E5' }}
+                style={{
+                  width: '100%',
+                  minHeight: 100,
+                  background: 'transparent',
+                  border: 'none',
+                  borderBottom: '1px solid #E5E5E5',
+                  padding: '12px 0',
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 15,
+                  color: 'var(--aura-text-primary)',
+                  resize: 'none',
+                  outline: 'none',
+                  marginBottom: 32,
+                  transition: 'border-color 0.2s ease',
+                }}
               />
 
               {error && (
-                <div className="bg-rose-light/30 px-3 py-2 rounded-lg space-y-1.5">
-                  <p className="text-xs text-rose-dark">{error}</p>
+                <div
+                  style={{
+                    marginBottom: 24,
+                    padding: '10px 0',
+                    borderTop: '1px solid rgba(0,0,0,0.06)',
+                    borderBottom: '1px solid rgba(0,0,0,0.06)',
+                  }}
+                >
+                  <p style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 13, color: 'var(--aura-text-secondary)' }}>
+                    {error}
+                  </p>
                   {retryCount >= 3 && (
-                    <p className="text-xs text-ink-light">多次失败可能是网络问题或 AI 服务限流，建议稍后再试</p>
+                    <p style={{ fontFamily: 'var(--aura-font-sans)', fontSize: 12, color: 'var(--aura-text-muted)', marginTop: 4 }}>
+                      多次失败可能是网络或 AI 服务限流,稍后再试
+                    </p>
                   )}
-                  <button
-                    onClick={handleSubmit}
-                    disabled={loading}
-                    className="text-xs text-lavender font-medium hover:underline"
-                  >
-                    点击重试
-                  </button>
                 </div>
               )}
-
-              <button
-                onClick={handleSubmit}
-                disabled={loading || !goal.trim()}
-                className="w-full py-2.5 bg-lavender text-paper rounded-xl text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-paper border-t-transparent rounded-full animate-spin" />
-                    <span>AI 思考中...</span>
-                  </>
-                ) : (
-                  '开始拆解'
-                )}
-              </button>
             </>
           )}
 
-          {/* Result */}
+          {/* Result phase */}
           {result && (
             <>
-              <div className="space-y-2">
-                <p className="text-xs text-ink-light font-medium">今日推荐任务：</p>
-                {result.today.map((t, i) => (
-                  <button
-                    key={i}
-                    onClick={() => toggleSelect(i)}
-                    className={`w-full flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all ${
-                      selected.has(i)
-                        ? 'bg-lavender-light/30 border-lavender'
-                        : 'bg-paper-warm border-cream'
-                    }`}
-                  >
-                    <div className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all ${
-                      selected.has(i)
-                        ? 'bg-lavender border-lavender text-paper'
-                        : 'border-ink-light/30'
-                    }`}>
-                      {selected.has(i) && (
-                        <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm text-ink block">{t.task}</span>
-                      {t.detail && <span className="text-xs text-ink-light/70 mt-0.5 block">{t.detail}</span>}
-                      <span className="text-xs text-ink-light mt-0.5 block">{t.duration}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <p
+                style={{
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 12,
+                  letterSpacing: '0.15em',
+                  color: 'var(--aura-text-muted)',
+                  marginBottom: 12,
+                }}
+              >
+                今日推荐
+              </p>
+              <ul style={{ marginBottom: 24 }}>
+                {result.today.map((t, i) => {
+                  const isSel = selected.has(i)
+                  return (
+                    <li key={i} style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+                      <button
+                        onClick={() => toggleSelect(i)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 12,
+                          width: '100%',
+                          padding: '14px 0',
+                          background: 'transparent',
+                          border: 'none',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <span
+                          style={{
+                            width: 18, height: 18, borderRadius: '50%',
+                            background: isSel ? 'var(--aura-green-solid)' : 'transparent',
+                            opacity: isSel ? 0.4 : 1,
+                            border: isSel ? 'none' : '1px solid rgba(0,0,0,0.2)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0,
+                            marginTop: 2,
+                          }}
+                        >
+                          {isSel && (
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                              <path d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span
+                            style={{
+                              display: 'block',
+                              fontFamily: 'var(--aura-font-sans)',
+                              fontSize: 15,
+                              color: 'var(--aura-text-primary)',
+                            }}
+                          >
+                            {t.task}
+                          </span>
+                          {t.detail && (
+                            <span
+                              style={{
+                                display: 'block',
+                                fontFamily: 'var(--aura-font-sans)',
+                                fontSize: 13,
+                                color: 'var(--aura-text-secondary)',
+                                marginTop: 4,
+                                lineHeight: 1.5,
+                              }}
+                            >
+                              {t.detail}
+                            </span>
+                          )}
+                          <span
+                            style={{
+                              display: 'block',
+                              fontFamily: 'var(--aura-font-mono)',
+                              fontSize: 11,
+                              letterSpacing: '0.1em',
+                              color: 'var(--aura-text-muted)',
+                              marginTop: 6,
+                            }}
+                          >
+                            {t.duration}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
 
               {result.week && (
-                <div className="p-3 bg-butter-light rounded-xl border border-butter">
-                  <p className="text-xs text-ink-light mb-1">本周计划概览：</p>
-                  <p className="text-sm text-ink">{result.week}</p>
+                <div
+                  style={{
+                    padding: '14px 0',
+                    borderTop: '1px solid rgba(0,0,0,0.06)',
+                    marginBottom: 24,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: 'var(--aura-font-sans)',
+                      fontSize: 12,
+                      letterSpacing: '0.15em',
+                      color: 'var(--aura-text-muted)',
+                      marginBottom: 6,
+                    }}
+                  >
+                    本周计划概览
+                  </p>
+                  <p
+                    style={{
+                      fontFamily: 'var(--aura-font-sans)',
+                      fontSize: 14,
+                      color: 'var(--aura-text-primary)',
+                      lineHeight: 1.6,
+                    }}
+                  >
+                    {result.week}
+                  </p>
                 </div>
               )}
 
               {error && (
-                <p className="text-xs text-rose-dark bg-rose-light/30 px-3 py-2 rounded-lg">{error}</p>
+                <p
+                  style={{
+                    fontFamily: 'var(--aura-font-sans)',
+                    fontSize: 13,
+                    color: 'var(--aura-text-secondary)',
+                    marginBottom: 16,
+                  }}
+                >
+                  {error}
+                </p>
               )}
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => { setResult(null); setError('') }}
-                  className="flex-1 py-2.5 border border-cream text-ink-light rounded-xl text-sm font-medium active:scale-[0.98] transition-all"
-                >
-                  重新拆解
-                </button>
-                <button
-                  onClick={handleAdd}
-                  disabled={selected.size === 0}
-                  className="flex-1 py-2.5 bg-sage text-paper rounded-xl text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-all"
-                >
-                  加入今日任务 ({selected.size})
-                </button>
-              </div>
             </>
           )}
         </div>
 
-        {/* Close button */}
-        <button onClick={onClose} className="absolute top-4 right-4 text-ink-light/40 hover:text-ink-light transition-colors">
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        {/* Footer actions */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 24, marginTop: 24 }}>
+          {!result && (
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !goal.trim()}
+              style={cnButton(!loading && goal.trim().length > 0)}
+            >
+              {loading ? 'AI 思考中…' : '开始拆解'}
+            </button>
+          )}
+
+          {result && (
+            <>
+              <button
+                onClick={() => { setResult(null); setError('') }}
+                style={cnButton(true)}
+              >
+                重新拆解
+              </button>
+              <button
+                onClick={handleAdd}
+                disabled={selected.size === 0}
+                style={cnButton(selected.size > 0)}
+              >
+                加入今日({selected.size})
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   )

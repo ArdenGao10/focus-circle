@@ -7,10 +7,12 @@ import { useTimer } from './TimerContext'
 import { useAppData } from './AppDataContext'
 import AITaskModal from './AITaskModal'
 
-const labelMono: React.CSSProperties = {
-  fontFamily: 'var(--aura-font-mono)',
+// Chinese text-button: sans + 0.2em tracking + 1px underline beneath the
+// glyphs themselves (no hover-extend — the underline matches the text width).
+const cnButton: React.CSSProperties = {
+  fontFamily: 'var(--aura-font-sans)',
   letterSpacing: '0.2em',
-  textTransform: 'uppercase',
+  fontWeight: 500,
 }
 
 export default function DailyTasks() {
@@ -165,26 +167,18 @@ export default function DailyTasks() {
         </div>
         <button
           onClick={() => setShowAIModal(true)}
-          className="aura-text-action group"
           style={{
-            ...labelMono,
-            fontSize: 12,
+            ...cnButton,
+            fontSize: 13,
             color: 'var(--aura-text-primary)',
             background: 'transparent',
             border: 'none',
-            padding: 0,
+            borderBottom: '1px solid var(--aura-text-primary)',
+            paddingBottom: 3,
             cursor: 'pointer',
           }}
         >
-          AI Suggest
-          <span
-            className="block mt-1.5 aura-underline-sm"
-            style={{
-              height: 1,
-              background: 'var(--aura-text-primary)',
-              transition: 'width 0.3s ease',
-            }}
-          />
+          AI 推荐
         </button>
       </div>
 
@@ -273,12 +267,13 @@ export default function DailyTasks() {
                   <span
                     className="ml-2"
                     style={{
-                      ...labelMono,
-                      fontSize: 9,
+                      fontFamily: 'var(--aura-font-sans)',
+                      fontSize: 11,
+                      letterSpacing: '0.2em',
                       color: 'var(--aura-green-solid)',
                     }}
                   >
-                    ACTIVE
+                    计时中
                   </span>
                 )}
               </span>
@@ -290,8 +285,9 @@ export default function DailyTasks() {
                   disabled={isTimerBusy}
                   className="opacity-0 group-hover:opacity-100 transition-opacity"
                   style={{
-                    ...labelMono,
-                    fontSize: 10,
+                    fontFamily: 'var(--aura-font-sans)',
+                    letterSpacing: '0.2em',
+                    fontSize: 11,
                     color: 'var(--aura-text-secondary)',
                     background: 'transparent',
                     border: 'none',
@@ -300,7 +296,7 @@ export default function DailyTasks() {
                   }}
                   title="开始计时"
                 >
-                  Start
+                  开始
                 </button>
               )}
               <button
@@ -349,26 +345,18 @@ export default function DailyTasks() {
         <button
           type="submit"
           disabled={!newTask.trim()}
-          className="aura-text-action"
           style={{
-            ...labelMono,
-            fontSize: 12,
+            ...cnButton,
+            fontSize: 13,
             color: newTask.trim() ? 'var(--aura-text-primary)' : 'var(--aura-text-muted)',
             background: 'transparent',
             border: 'none',
-            padding: '8px 0',
+            borderBottom: `1px solid ${newTask.trim() ? 'var(--aura-text-primary)' : 'rgba(0,0,0,0.15)'}`,
+            paddingBottom: 3,
             cursor: newTask.trim() ? 'pointer' : 'not-allowed',
           }}
         >
-          ADD
-          <span
-            className="block mt-1.5 aura-underline-sm"
-            style={{
-              height: 1,
-              background: 'currentColor',
-              transition: 'width 0.3s ease',
-            }}
-          />
+          添加
         </button>
       </form>
 
