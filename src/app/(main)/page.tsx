@@ -98,17 +98,18 @@ function AuraHalo({ state, children }: { state: TimerVisualState; children: Reac
         />
       ))}
 
-      {/* Core — 80% size, gradient fades fully transparent at 70%. */}
+      {/* Core — fixed 320×320 to stay a true circle in any container shape. */}
       {states.map(s => (
         <div
           key={`c-${s}`}
           aria-hidden="true"
           style={{
             position: 'absolute',
-            width: '80%',
-            height: '80%',
-            left: '10%',
-            top: '10%',
+            width: '320px',
+            height: '320px',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
             background: ORB_GRADIENTS[s].core,
             borderRadius: '50%',
             pointerEvents: 'none',
