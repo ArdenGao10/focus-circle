@@ -70,7 +70,7 @@ function AuraHalo({ state, children }: { state: TimerVisualState; children: Reac
         position: 'relative',
         width: '100%',
         aspectRatio: '1 / 1',
-        maxWidth: 280,
+        maxWidth: 380,
         margin: '0 auto',
         display: 'flex',
         alignItems: 'center',
@@ -282,7 +282,7 @@ export default function TimerPage() {
             <div
               style={{
                 fontFamily: 'var(--aura-font-serif)',
-                fontSize: 52,
+                fontSize: 64,
                 fontWeight: 300,
                 lineHeight: 1,
                 color: 'var(--aura-text-primary)',
