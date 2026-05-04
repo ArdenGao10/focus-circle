@@ -59,19 +59,19 @@ function AuraHalo({ state, children }: { state: TimerVisualState; children: Reac
   return (
     <div
       className="relative flex items-center justify-center mx-auto"
-      style={{ width: 'min(400px, 70vw)', height: 'min(400px, 70vw)' }}
+      style={{ width: 'min(320px, 60vw)', height: 'min(320px, 60vw)' }}
     >
       <div className="absolute inset-0 aura-breathe">
         <div style={layer(
-          'radial-gradient(circle at center, var(--aura-green-soft) 0%, transparent 70%)',
+          'radial-gradient(circle at center, var(--aura-green-soft) 0%, transparent 85%)',
           state === 'idle',
         )} />
         <div style={layer(
-          'radial-gradient(circle at center, var(--aura-green) 0%, transparent 65%)',
+          'radial-gradient(circle at center, var(--aura-green) 0%, transparent 85%)',
           state === 'running',
         )} />
         <div style={layer(
-          'radial-gradient(circle at center, var(--aura-cool) 0%, transparent 70%)',
+          'radial-gradient(circle at center, var(--aura-cool) 0%, transparent 85%)',
           state === 'paused',
         )} />
       </div>
@@ -176,7 +176,7 @@ export default function TimerPage() {
       style={{ background: 'var(--aura-bg-primary)', color: 'var(--aura-text-primary)' }}
     >
       {/* ─── Hero: ~one screen, generous whitespace ─── */}
-      <section className="flex flex-col items-center px-6 pt-10 pb-24">
+      <section className="flex flex-col items-center px-6 pt-5 pb-16">
         {/* 1. Top wordmark */}
         <div
           style={{
@@ -191,7 +191,7 @@ export default function TimerPage() {
 
         {/* 2. Big serif title */}
         <h1
-          className="mt-12 text-center"
+          className="mt-6 text-center"
           style={{
             fontFamily: 'var(--aura-font-serif)',
             fontSize: 'clamp(40px, 12vw, 56px)',
@@ -217,13 +217,13 @@ export default function TimerPage() {
         </div>
 
         {/* 4. The halo + time */}
-        <div className="mt-12">
+        <div className="mt-6">
           <AuraHalo state={state}>
             <div className="flex flex-col items-center">
               <div
                 style={{
                   fontFamily: 'var(--aura-font-serif)',
-                  fontSize: 'clamp(56px, 16vw, 88px)',
+                  fontSize: 'clamp(48px, 14vw, 72px)',
                   fontWeight: 300,
                   lineHeight: 1,
                   color: 'var(--aura-text-primary)',
@@ -235,14 +235,14 @@ export default function TimerPage() {
 
               {hasNamedTask && (
                 <div
-                  className="mt-6 flex items-center gap-2"
+                  className="mt-5 flex items-center gap-2"
                   style={{
                     fontFamily: 'var(--aura-font-sans)',
                     fontSize: 14,
                     color: 'var(--aura-text-secondary)',
                   }}
                 >
-                  <span style={{ color: 'rgb(111, 169, 137)' }}>•</span>
+                  <span style={{ color: 'var(--aura-green-solid)' }}>•</span>
                   <span className="truncate max-w-[16rem]">{activeTaskName}</span>
                 </div>
               )}
@@ -251,7 +251,7 @@ export default function TimerPage() {
         </div>
 
         {/* 5. Operation area — text-only with hover-extend underline */}
-        <div className="mt-20 flex flex-col items-center">
+        <div className="mt-10 flex flex-col items-center">
           <button
             onClick={onPrimary}
             className="aura-text-action group"
@@ -318,7 +318,8 @@ export default function TimerPage() {
                   <span
                     style={{
                       width: 6, height: 6, borderRadius: '50%',
-                      background: isLive ? 'rgb(111, 169, 137)' : 'var(--aura-text-muted)',
+                      background: 'var(--aura-green-solid)',
+                      opacity: isLive ? 1 : 0.6,
                       flexShrink: 0,
                     }}
                   />
@@ -349,27 +350,22 @@ export default function TimerPage() {
         </section>
       )}
 
-      <section className="px-6 pb-32 max-w-md mx-auto w-full">
+      <section className="px-6 pb-10 max-w-md mx-auto w-full">
         <DailyTasks />
       </section>
 
-      {/* ─── Footer status bar — fixed above the bottom nav ─── */}
+      {/* ─── Footer status bar — in document flow, surfaces only at the bottom of scroll ─── */}
       <div
-        className="fixed left-0 right-0 flex justify-center pointer-events-none"
-        style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
+        className="flex justify-center px-6 pb-12 pt-6"
+        style={{
+          fontFamily: 'var(--aura-font-mono)',
+          fontSize: 10,
+          letterSpacing: '0.15em',
+          color: 'var(--aura-text-muted)',
+          fontVariantNumeric: 'tabular-nums lining-nums',
+        }}
       >
-        <div
-          className="px-4 py-2"
-          style={{
-            fontFamily: 'var(--aura-font-mono)',
-            fontSize: 10,
-            letterSpacing: '0.15em',
-            color: 'var(--aura-text-muted)',
-            fontVariantNumeric: 'tabular-nums lining-nums',
-          }}
-        >
-          FOCUS.CIRCLE // {formatTime(todayTotal)} TODAY{streakDays > 0 ? ` // ${streakDays} DAYS STREAK` : ''}
-        </div>
+        FOCUS.CIRCLE // {formatTime(todayTotal)} TODAY{streakDays > 0 ? ` // ${streakDays} DAYS STREAK` : ''}
       </div>
     </div>
   )

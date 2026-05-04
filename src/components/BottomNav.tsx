@@ -1,16 +1,15 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { useTimer } from './TimerContext'
 
 const tabs = [
-  { href: '/', label: '计时', icon: '🌱' },
-  { href: '/leaderboard', label: '排行', icon: '🌸' },
-  { href: '/square', label: '广场', icon: '📖' },
-  { href: '/profile', label: '我的', icon: '🍃' },
+  { href: '/',            zh: '计时', en: 'TIMER' },
+  { href: '/leaderboard', zh: '排行', en: 'RANK'  },
+  { href: '/square',      zh: '广场', en: 'SQUARE'},
+  { href: '/profile',     zh: '我的', en: 'ME'    },
 ]
 
 export default function BottomNav() {
@@ -21,15 +20,19 @@ export default function BottomNav() {
 
   useEffect(() => {
     tabs.forEach((tab) => {
-      if (tab.href !== pathname) {
-        router.prefetch(tab.href)
-      }
+      if (tab.href !== pathname) router.prefetch(tab.href)
     })
   }, [pathname, router])
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-paper/90 backdrop-blur-md border-t border-cream pb-[env(safe-area-inset-bottom)]">
-      <div className="flex justify-around items-center h-14 max-w-lg mx-auto">
+    <nav
+      className="fixed bottom-0 left-0 right-0 pb-[env(safe-area-inset-bottom)]"
+      style={{
+        background: 'var(--aura-bg-elevated)',
+        borderTop: '1px solid rgba(0,0,0,0.06)',
+      }}
+    >
+      <div className="flex justify-around items-center h-16 max-w-lg mx-auto px-4">
         {tabs.map((tab) => {
           const active = pathname === tab.href
           const isTimer = tab.href === '/'
@@ -37,20 +40,57 @@ export default function BottomNav() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`relative flex flex-col items-center gap-0.5 text-xs transition-colors ${
-                active ? 'text-ink font-medium' : 'text-ink-light/50'
-              }`}
-              style={{ fontFamily: 'var(--font-display)' }}
+              className="relative flex flex-col items-center justify-center gap-1"
+              style={{ minWidth: 56 }}
             >
-              <span className="text-lg relative">
-                {tab.icon}
+              {/* Chinese label */}
+              <span
+                style={{
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 14,
+                  color: active ? 'var(--aura-text-primary)' : 'var(--aura-text-secondary)',
+                  position: 'relative',
+                }}
+              >
+                {tab.zh}
+                {/* Live-timer indicator: tiny dot, no background pill */}
                 {isTimer && isTimerRunning && (
-                  <span className="absolute -top-0.5 -right-1.5 w-2 h-2 bg-sage rounded-full animate-pulse" />
+                  <span
+                    aria-hidden="true"
+                    className="absolute"
+                    style={{
+                      top: -2, right: -8,
+                      width: 5, height: 5, borderRadius: '50%',
+                      background: 'var(--aura-green-solid)',
+                    }}
+                  />
                 )}
               </span>
-              <span>{tab.label}</span>
+
+              {/* English label */}
+              <span
+                style={{
+                  fontFamily: 'var(--aura-font-mono)',
+                  fontSize: 9,
+                  letterSpacing: '0.3em',
+                  color: 'var(--aura-text-muted)',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {tab.en}
+              </span>
+
+              {/* Active underline — width matches the Chinese label (text-only, 14px → ~28px for two CJK chars) */}
               {active && (
-                <span className="absolute -bottom-1 w-4 h-0.5 bg-sage rounded-full" />
+                <span
+                  className="absolute"
+                  style={{
+                    bottom: -6,
+                    height: 2,
+                    width: 28,
+                    background: 'var(--aura-green-solid)',
+                  }}
+                />
               )}
             </Link>
           )

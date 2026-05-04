@@ -7,6 +7,12 @@ import { useTimer } from './TimerContext'
 import { useAppData } from './AppDataContext'
 import AITaskModal from './AITaskModal'
 
+const labelMono: React.CSSProperties = {
+  fontFamily: 'var(--aura-font-mono)',
+  letterSpacing: '0.2em',
+  textTransform: 'uppercase',
+}
+
 export default function DailyTasks() {
   const [newTask, setNewTask] = useState('')
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -89,110 +95,281 @@ export default function DailyTasks() {
   const todayTasks = tasks.filter(t => t.date === today)
   const completedCount = todayTasks.filter(t => t.completed).length
   const suggestions = getSmartSuggestions(goal, todayTasks.map(t => t.title))
+  const progressPct = todayTasks.length > 0 ? (completedCount / todayTasks.length) * 100 : 0
 
   if (!ready) {
     return (
-      <div className="bg-paper rounded-2xl border border-cream p-4 shadow-sm space-y-2">
-        <div className="h-3 bg-cream rounded w-16 animate-pulse" />
-        <div className="h-2 bg-cream rounded animate-pulse" />
-        <div className="h-2 bg-cream rounded w-2/3 animate-pulse" />
+      <div
+        className="p-6"
+        style={{
+          background: 'var(--aura-bg-elevated)',
+          border: '1px solid rgba(0,0,0,0.06)',
+          borderRadius: 24,
+        }}
+      >
+        <div className="h-3 w-24 animate-pulse" style={{ background: 'rgba(0,0,0,0.06)' }} />
       </div>
     )
   }
 
   return (
-    <div className="relative bg-paper rounded-2xl border border-cream p-4 shadow-sm paper-texture">
-      <div className="absolute -top-1.5 left-8 w-20 h-2.5 bg-rose-light opacity-50 rounded-sm rotate-[-1deg]" />
-
+    <div
+      className="p-6"
+      style={{
+        background: 'var(--aura-bg-elevated)',
+        border: '1px solid rgba(0,0,0,0.06)',
+        borderRadius: 24,
+      }}
+    >
       {errorMsg && (
-        <div className="mb-2 text-xs text-rose-dark bg-rose-light/30 px-3 py-1.5 rounded-lg">{errorMsg}</div>
+        <div
+          className="mb-3 px-3 py-2"
+          style={{
+            fontFamily: 'var(--aura-font-sans)',
+            fontSize: 12,
+            color: 'var(--aura-text-secondary)',
+            background: 'rgba(0,0,0,0.03)',
+            borderRadius: 8,
+          }}
+        >
+          {errorMsg}
+        </div>
       )}
 
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-ink" style={{ fontFamily: 'var(--font-display)' }}>
+      {/* Header: serif title + mono progress count + AI Suggest text-link */}
+      <div className="flex items-end justify-between mb-5">
+        <div className="flex items-baseline gap-3">
+          <h2
+            style={{
+              fontFamily: 'var(--aura-font-serif)',
+              fontSize: 24,
+              fontWeight: 400,
+              lineHeight: 1.1,
+              color: 'var(--aura-text-primary)',
+            }}
+          >
             今日任务
-          </span>
+          </h2>
           {todayTasks.length > 0 && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-sage-light/40 text-sage-dark">
+            <span
+              style={{
+                fontFamily: 'var(--aura-font-mono)',
+                fontSize: 14,
+                color: 'var(--aura-text-muted)',
+                fontVariantNumeric: 'tabular-nums lining-nums',
+              }}
+            >
               {completedCount}/{todayTasks.length}
             </span>
           )}
         </div>
         <button
           onClick={() => setShowAIModal(true)}
-          className="text-xs px-3 py-1.5 rounded-full bg-lavender text-paper font-medium shadow-sm hover:shadow-md transition-all active:scale-95"
+          className="aura-text-action group"
+          style={{
+            ...labelMono,
+            fontSize: 12,
+            color: 'var(--aura-text-primary)',
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            cursor: 'pointer',
+          }}
         >
-          AI 推荐
+          AI Suggest
+          <span
+            className="block mt-1.5 aura-underline-sm"
+            style={{
+              height: 1,
+              background: 'var(--aura-text-primary)',
+              transition: 'width 0.3s ease',
+            }}
+          />
         </button>
       </div>
 
+      {/* Progress bar — 2px, gradient fill */}
       {todayTasks.length > 0 && (
-        <div className="h-1.5 bg-cream rounded-full mb-3 overflow-hidden">
-          <div className="h-full bg-sage rounded-full transition-all duration-500" style={{ width: `${(completedCount / todayTasks.length) * 100}%` }} />
+        <div
+          className="mb-6 overflow-hidden"
+          style={{ height: 2, background: 'rgba(0,0,0,0.06)', borderRadius: 1 }}
+        >
+          <div
+            style={{
+              height: '100%',
+              width: `${progressPct}%`,
+              background: 'linear-gradient(90deg, var(--aura-green-solid) 0%, var(--aura-warm-solid) 100%)',
+              transition: 'width 0.5s ease',
+            }}
+          />
         </div>
       )}
 
       {showSuggestions && suggestions.length > 0 && (
-        <div className="mb-3 p-3 bg-lavender-light/40 rounded-xl border border-lavender-light notebook-lines">
-          <p className="text-xs text-lavender font-medium mb-2">基于「{goal}」推荐：</p>
-          <div className="flex flex-wrap gap-1.5">
-            {suggestions.map((s) => (
-              <button key={s} onClick={() => addTask(s)} className="text-xs px-2.5 py-1.5 bg-paper rounded-lg border border-lavender-light text-ink-light hover:bg-lavender-light/30 transition-colors active:scale-95">
-                + {s}
-              </button>
-            ))}
-          </div>
+        <div className="mb-5 flex flex-wrap gap-2">
+          {suggestions.map((s) => (
+            <button
+              key={s}
+              onClick={() => addTask(s)}
+              style={{
+                fontFamily: 'var(--aura-font-sans)',
+                fontSize: 13,
+                color: 'var(--aura-text-secondary)',
+                background: 'transparent',
+                border: '1px solid rgba(0,0,0,0.1)',
+                borderRadius: 999,
+                padding: '6px 12px',
+                cursor: 'pointer',
+              }}
+            >
+              + {s}
+            </button>
+          ))}
         </div>
       )}
 
-      <div className="space-y-1 mb-3">
+      {/* Tasks list */}
+      <ul className="mb-6">
         {todayTasks.map((task) => {
           const isActiveTask = isTimerBusy && taskName === task.title
           return (
-            <div key={task.id} className={`flex items-center gap-2 group py-2 px-1.5 rounded-lg transition-colors ${isActiveTask ? 'bg-sage-light/20' : ''}`}>
+            <li
+              key={task.id}
+              className="group flex items-center gap-3"
+              style={{ height: 56, borderBottom: '1px solid rgba(0,0,0,0.04)' }}
+            >
+              {/* Checkbox */}
               <button
                 onClick={() => toggleTask(task.id, task.completed)}
-                className={`w-4.5 h-4.5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
-                  task.completed ? 'bg-sage border-sage text-paper' : 'border-ink-light/30 hover:border-sage'
-                }`}
+                aria-label={task.completed ? '取消完成' : '标记完成'}
+                style={{
+                  width: 18, height: 18, borderRadius: '50%',
+                  background: task.completed ? 'var(--aura-green-solid)' : 'transparent',
+                  opacity: task.completed ? 0.4 : 1,
+                  border: task.completed ? 'none' : '1px solid rgba(0,0,0,0.2)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                  cursor: 'pointer',
+                }}
               >
                 {task.completed && (
-                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 13l4 4L19 7" />
                   </svg>
                 )}
               </button>
-              <span className={`text-sm flex-1 ${task.completed ? 'line-through text-ink-light/40' : 'text-ink'} ${isActiveTask ? 'text-sage-dark font-medium' : ''}`}>
+
+              <span
+                className="flex-1 truncate"
+                style={{
+                  fontFamily: 'var(--aura-font-sans)',
+                  fontSize: 16,
+                  color: task.completed ? 'var(--aura-text-muted)' : 'var(--aura-text-primary)',
+                  textDecoration: task.completed ? 'line-through' : 'none',
+                }}
+              >
                 {task.title}
-                {isActiveTask && <span className="ml-1.5 text-xs text-sage animate-pulse">计时中</span>}
+                {isActiveTask && (
+                  <span
+                    className="ml-2"
+                    style={{
+                      ...labelMono,
+                      fontSize: 9,
+                      color: 'var(--aura-green-solid)',
+                    }}
+                  >
+                    ACTIVE
+                  </span>
+                )}
               </span>
 
+              {/* Hover-revealed actions: start + delete */}
               {!task.completed && !isActiveTask && (
-                <button onClick={() => handleStartTask(task.title, task.source)} disabled={isTimerBusy} className="opacity-0 group-hover:opacity-100 disabled:opacity-30 text-sage hover:text-sage-dark transition-all active:scale-90 p-0.5" title="开始计时">
-                  <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                <button
+                  onClick={() => handleStartTask(task.title, task.source)}
+                  disabled={isTimerBusy}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{
+                    ...labelMono,
+                    fontSize: 10,
+                    color: 'var(--aura-text-secondary)',
+                    background: 'transparent',
+                    border: 'none',
+                    padding: '0 4px',
+                    cursor: 'pointer',
+                  }}
+                  title="开始计时"
+                >
+                  Start
                 </button>
               )}
-
-              <button onClick={() => deleteTask(task.id)} className="opacity-0 group-hover:opacity-100 text-ink-light/30 hover:text-rose-dark transition-all text-xs p-0.5">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
+              <button
+                onClick={() => deleteTask(task.id)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{
+                  fontFamily: 'var(--aura-font-mono)',
+                  fontSize: 14,
+                  lineHeight: 1,
+                  color: 'var(--aura-text-muted)',
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '0 4px',
+                  cursor: 'pointer',
+                }}
+                aria-label="删除"
+              >
+                ×
               </button>
-            </div>
+            </li>
           )
         })}
-      </div>
+      </ul>
 
-      <form onSubmit={(e) => { e.preventDefault(); addTask(newTask) }} className="flex gap-2">
-        <input type="text" placeholder="写下新任务..." value={newTask} onChange={(e) => setNewTask(e.target.value)}
-          className="flex-1 text-sm px-3 py-2 bg-paper-warm border border-cream rounded-lg focus:outline-none focus:border-sage transition-colors"
-          style={{ fontFamily: "'Noto Serif SC', serif" }}
+      {/* Add task — underline-only input + ADD text-button */}
+      <form
+        onSubmit={(e) => { e.preventDefault(); addTask(newTask) }}
+        className="flex items-end gap-4"
+      >
+        <input
+          type="text"
+          placeholder="写下新任务..."
+          value={newTask}
+          onChange={(e) => setNewTask(e.target.value)}
+          className="flex-1 focus:outline-none"
+          style={{
+            fontFamily: 'var(--aura-font-sans)',
+            fontSize: 14,
+            color: 'var(--aura-text-primary)',
+            background: 'transparent',
+            border: 'none',
+            borderBottom: '1px solid rgba(0,0,0,0.1)',
+            padding: '8px 0',
+          }}
         />
-        <button type="submit" disabled={!newTask.trim()} className="px-3 py-2 bg-sage text-paper rounded-lg text-sm font-medium disabled:opacity-30 active:scale-95 transition-transform">添加</button>
+        <button
+          type="submit"
+          disabled={!newTask.trim()}
+          className="aura-text-action"
+          style={{
+            ...labelMono,
+            fontSize: 12,
+            color: newTask.trim() ? 'var(--aura-text-primary)' : 'var(--aura-text-muted)',
+            background: 'transparent',
+            border: 'none',
+            padding: '8px 0',
+            cursor: newTask.trim() ? 'pointer' : 'not-allowed',
+          }}
+        >
+          ADD
+          <span
+            className="block mt-1.5 aura-underline-sm"
+            style={{
+              height: 1,
+              background: 'currentColor',
+              transition: 'width 0.3s ease',
+            }}
+          />
+        </button>
       </form>
 
       {showAIModal && (

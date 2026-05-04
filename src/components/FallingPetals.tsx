@@ -1,5 +1,7 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
+
 const PETALS = [
   { emoji: '🌸', left: '8%', delay: '0s', duration: '12s', size: 'text-base' },
   { emoji: '🍃', left: '22%', delay: '3s', duration: '15s', size: 'text-sm' },
@@ -10,6 +12,11 @@ const PETALS = [
 ]
 
 export default function FallingPetals() {
+  const pathname = usePathname()
+  // Aura redesign: timer page is petal-free. Other (main) routes keep them
+  // until they get the new design language.
+  if (pathname === '/') return null
+
   return (
     <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden" aria-hidden="true">
       {PETALS.map((p, i) => (

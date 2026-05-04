@@ -51,6 +51,9 @@
   --aura-green-soft: rgba(168, 213, 186, 0.3);
   --aura-warm: rgba(244, 196, 161, 0.5);
   --aura-cool: rgba(197, 181, 221, 0.4);
+  /* Solid accent — used sparingly for tiny markers (dots, active underline) */
+  --aura-green-solid: #5C8A70;
+  --aura-warm-solid: #C99765;
 
   /* Typography stacks for the new system */
   --aura-font-serif: var(--font-cormorant), 'LXGW WenKai', '霞鹜文楷', 'Source Han Serif SC', 'Noto Serif SC', 'Songti SC', Georgia, serif;
@@ -252,13 +255,21 @@ body {
   will-change: transform, opacity;
 }
 
-/* Text-action hover: underline expands 60 → 100px. */
+/* Text-action hover: underline expands 60 → 100px (default). */
 .aura-text-action > span {
   width: 60px;
 }
 .aura-text-action:hover > span,
 .aura-text-action:focus-visible > span {
   width: 100px;
+}
+/* Smaller variant: 40 → 60 px (used on inline secondary actions). */
+.aura-text-action > span.aura-underline-sm {
+  width: 40px;
+}
+.aura-text-action:hover > span.aura-underline-sm,
+.aura-text-action:focus-visible > span.aura-underline-sm {
+  width: 60px;
 }
 
 /* Custom scrollbar */
