@@ -171,13 +171,29 @@ export default function SquarePage() {
       >
         <header
           style={{
+            position: 'relative',
             marginBottom: '40px',
             paddingBottom: '20px',
             borderBottom: '1px solid rgba(0,0,0,0.08)',
           }}
         >
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: -60,
+              width: 200,
+              height: 200,
+              background:
+                'radial-gradient(circle, rgba(197, 181, 221, 0.3) 0%, rgba(197, 181, 221, 0.08) 50%, transparent 80%)',
+              filter: 'blur(40px)',
+              pointerEvents: 'none',
+            }}
+          />
           <h1
             style={{
+              position: 'relative',
               fontFamily: 'var(--font-serif)',
               fontSize: '40px',
               fontWeight: 400,
@@ -189,6 +205,7 @@ export default function SquarePage() {
           </h1>
           <p
             style={{
+              position: 'relative',
               fontFamily: 'var(--font-sans)',
               fontSize: '12px',
               color: 'var(--text-muted)',
@@ -358,13 +375,29 @@ export default function SquarePage() {
                 <article
                   key={post.id}
                   style={{
+                    position: 'relative',
                     paddingBottom: '32px',
                     marginBottom: '32px',
                     borderBottom: '1px solid rgba(0,0,0,0.08)',
                   }}
                 >
                   <div
+                    aria-hidden
                     style={{
+                      position: 'absolute',
+                      top: 12,
+                      right: -20,
+                      width: 80,
+                      height: 80,
+                      background:
+                        'radial-gradient(circle, rgba(168, 213, 186, 0.2) 0%, transparent 70%)',
+                      filter: 'blur(20px)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                  <div
+                    style={{
+                      position: 'relative',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',
@@ -444,6 +477,7 @@ export default function SquarePage() {
                   {post.title && post.title.trim() !== '' && (
                     <h3
                       style={{
+                        position: 'relative',
                         fontFamily: 'var(--font-serif)',
                         fontSize: '20px',
                         fontWeight: 400,
@@ -458,6 +492,7 @@ export default function SquarePage() {
 
                   <p
                     style={{
+                      position: 'relative',
                       fontFamily: 'var(--font-sans)',
                       fontSize: '15px',
                       color: 'var(--text-secondary)',
@@ -475,6 +510,7 @@ export default function SquarePage() {
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
+                        position: 'relative',
                         display: 'inline-block',
                         fontFamily: 'var(--font-mono)',
                         fontSize: '11px',
@@ -489,7 +525,7 @@ export default function SquarePage() {
                     </a>
                   )}
 
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <button
                       onClick={() => {
                         if (!canEncourage) return

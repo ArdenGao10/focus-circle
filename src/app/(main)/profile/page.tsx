@@ -204,9 +204,9 @@ export default function ProfilePage() {
   const visibleDates = historyExpanded ? dateList.slice(0, 30) : dateList.slice(0, 2)
 
   const bigStats = [
-    { label: '打卡天数', value: historyLoaded ? String(totalDays) : '–', unit: '天' },
-    { label: '累计时长', value: historyLoaded ? formatHours(totalSeconds) : '–', unit: 'h' },
-    { label: '日目标', value: String(targetMins), unit: '分' },
+    { label: '打卡天数', value: historyLoaded ? String(totalDays) : '–', unit: '天', glow: 'rgba(168, 213, 186, 0.35)' },
+    { label: '累计时长', value: historyLoaded ? formatHours(totalSeconds) : '–', unit: 'h', glow: 'rgba(244, 196, 161, 0.30)' },
+    { label: '日目标', value: String(targetMins), unit: '分', glow: 'rgba(197, 181, 221, 0.30)' },
   ]
 
   return (
@@ -253,10 +253,26 @@ export default function ProfilePage() {
         }}>
           {bigStats.map((stat, i) => (
             <div key={stat.label} style={{
+              position: 'relative',
+              overflow: 'visible',
               padding: '20px 0', textAlign: 'center',
               borderRight: i < bigStats.length - 1 ? '1px solid rgba(0,0,0,0.08)' : 'none',
             }}>
+              <div
+                aria-hidden
+                style={{
+                  position: 'absolute',
+                  top: -10,
+                  right: -10,
+                  width: 80,
+                  height: 80,
+                  background: `radial-gradient(circle, ${stat.glow} 0%, transparent 70%)`,
+                  filter: 'blur(25px)',
+                  pointerEvents: 'none',
+                }}
+              />
               <div style={{
+                position: 'relative',
                 fontFamily: 'var(--aura-font-serif)',
                 fontSize: stat.value.length > 5 ? 20 : 32,
                 fontWeight: 400,
@@ -274,6 +290,7 @@ export default function ProfilePage() {
                 )}
               </div>
               <div style={{
+                position: 'relative',
                 fontFamily: 'var(--aura-font-sans)',
                 fontSize: 11, color: 'var(--aura-text-muted)', letterSpacing: '0.15em',
               }}>
@@ -284,8 +301,23 @@ export default function ProfilePage() {
         </section>
 
         {/* 3. Learning stats — chart with week/month toggle */}
-        <section style={{ marginBottom: 48 }}>
+        <section style={{ position: 'relative', marginBottom: 48 }}>
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              top: -30,
+              left: -30,
+              width: 240,
+              height: 240,
+              background:
+                'radial-gradient(circle, rgba(168, 213, 186, 0.25) 0%, transparent 70%)',
+              filter: 'blur(50px)',
+              pointerEvents: 'none',
+            }}
+          />
           <div style={{
+            position: 'relative',
             display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
             marginBottom: 24,
           }}>
@@ -313,6 +345,7 @@ export default function ProfilePage() {
           </div>
 
           <div style={{
+            position: 'relative',
             display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 32,
           }}>
             {summaryItems.map(s => (
@@ -335,7 +368,7 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          <div style={{ height: 200 }}>
+          <div style={{ position: 'relative', height: 200 }}>
             {statsLoading && !statsResult ? (
               <div style={{ height: '100%', background: 'rgba(0,0,0,0.02)', borderRadius: 8 }} />
             ) : (
