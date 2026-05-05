@@ -3,232 +3,382 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Focus Circle 专注圈 - 作品展示</title>
+<title>Focus Circle 专注圈 — 作品展示</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&family=Noto+Serif+SC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Space+Grotesk:wght@400;600;700&display=swap');
-
   :root {
-    --sage: #8B9A7B;
-    --sage-light: #C5D1BC;
-    --rose: #C4A4A0;
-    --cream: #F5F0E8;
-    --paper: #FDFBF7;
-    --ink: #3A3A38;
-    --ink-light: #7A7A78;
-    --lavender: #B8B0C8;
+    /* Surfaces */
+    --bg: #FBFBFB;
+    --paper: #FFFFFF;
+    --paper-warm: #FAFAF7;
+
+    /* Ink */
+    --text-primary: #1A1A1A;
+    --text-secondary: #6B6B6B;
+    --text-muted: #A0A0A0;
+    --text-faint: #C8C8C8;
+
+    /* Aura palette — used as radial blurs, never solid */
+    --aura-green-strong: rgba(111, 169, 137, 0.45);
+    --aura-green: rgba(168, 213, 186, 0.35);
+    --aura-green-soft: rgba(168, 213, 186, 0.16);
+    --aura-purple: rgba(197, 181, 221, 0.42);
+    --aura-purple-soft: rgba(197, 181, 221, 0.18);
+    --aura-rose: rgba(231, 178, 178, 0.40);
+    --aura-rose-soft: rgba(231, 178, 178, 0.18);
+    --aura-amber: rgba(244, 196, 161, 0.42);
+    --aura-amber-soft: rgba(244, 196, 161, 0.18);
+    --aura-blue: rgba(173, 198, 219, 0.42);
+    --aura-blue-soft: rgba(173, 198, 219, 0.18);
+    --aura-sage: rgba(192, 209, 188, 0.42);
+    --aura-sage-soft: rgba(192, 209, 188, 0.18);
+
+    /* Solid markers — used sparingly */
+    --green-solid: #5C8A70;
+
+    /* Typography */
+    --font-serif: 'Cormorant Garamond', 'Noto Serif SC', 'Songti SC', Georgia, serif;
+    --font-sans: 'Inter', 'PingFang SC', 'Hiragino Sans GB', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'Noto Sans SC', sans-serif;
-    background: var(--paper);
-    color: var(--ink);
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text-primary);
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .page { page-break-after: always; break-after: page; }
     .page:last-child { page-break-after: avoid; }
-    .features, .showcase-row, .arch-box, .highlights, .feature-card, .phone-wrap {
+    .feature-grid, .showcase-row, .tech-list, .highlight-grid,
+    .feature-card, .phone-wrap, .arch-row, .design-note {
       page-break-inside: avoid; break-inside: avoid;
     }
-    .section-title, .section-sub {
+    .section-head, .meta-grid {
       page-break-after: avoid; break-after: avoid;
     }
   }
 
+  /* ─────────────────────────── Page frame ─────────────────────────── */
   .page {
     width: 210mm;
     min-height: 297mm;
     margin: 0 auto;
-    padding: 40px 50px;
-    background: var(--paper);
-  }
-
-  /* ---- Cover Page ---- */
-  .cover {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+    padding: 56px 56px 48px;
+    background: var(--bg);
     position: relative;
     overflow: hidden;
   }
 
-  .cover::before {
-    content: '';
-    position: absolute;
-    top: -80px; right: -80px;
-    width: 300px; height: 300px;
-    border-radius: 50%;
-    background: var(--sage-light);
-    opacity: 0.2;
+  /* ─────────────────────────── Common type ─────────────────────────── */
+  .mono-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 400;
   }
 
-  .cover::after {
-    content: '';
-    position: absolute;
-    bottom: -60px; left: -60px;
-    width: 220px; height: 220px;
-    border-radius: 50%;
-    background: var(--rose);
-    opacity: 0.15;
+  .serif-title {
+    font-family: var(--font-serif);
+    font-weight: 400;
+    color: var(--text-primary);
+    letter-spacing: 0.01em;
   }
 
-  .cover .logo {
-    width: 80px; height: 80px;
-    background: var(--sage);
-    border-radius: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .italic-sub {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 300;
+    color: var(--text-secondary);
+  }
+
+  .section-head {
     margin-bottom: 28px;
-    box-shadow: 0 8px 32px rgba(139,154,123,0.3);
   }
-
-  .cover .logo svg { width: 44px; height: 44px; fill: white; }
-
-  .cover h1 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 42px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
+  .section-head .label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .section-head .title {
+    font-family: var(--font-serif);
+    font-size: 36px;
+    font-weight: 400;
+    line-height: 1.05;
+    color: var(--text-primary);
     margin-bottom: 6px;
   }
-
-  .cover .subtitle {
-    font-size: 18px;
-    color: var(--ink-light);
-    font-weight: 300;
-    margin-bottom: 48px;
+  .section-head .sub {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 14px;
+    color: var(--text-secondary);
   }
 
-  .cover .tagline {
-    font-size: 15px;
-    color: var(--ink-light);
-    max-width: 440px;
-    line-height: 1.8;
-    margin-bottom: 60px;
+  /* ─────────────────────────── Cover ─────────────────────────── */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+    text-align: center;
+    padding: 72px 56px 56px;
   }
 
-  .meta-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px 40px;
-    text-align: left;
+  .cover-aura-bg {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .cover-aura-bg::before,
+  .cover-aura-bg::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+  }
+  .cover-aura-bg::before {
+    top: -120px; right: -100px;
+    width: 360px; height: 360px;
+    background: radial-gradient(circle, var(--aura-green-strong) 0%, transparent 65%);
+  }
+  .cover-aura-bg::after {
+    bottom: -120px; left: -120px;
+    width: 320px; height: 320px;
+    background: radial-gradient(circle, var(--aura-purple) 0%, transparent 65%);
+  }
+
+  .cover-top, .cover-mid, .cover-bottom {
     position: relative;
     z-index: 1;
   }
 
-  .meta-item { font-size: 13px; }
-  .meta-item .label { color: var(--ink-light); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
-  .meta-item .value { font-weight: 500; }
+  .cover-top .mark {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--text-muted);
+  }
 
-  /* ---- Section Headers ---- */
-  .section-title {
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 6px;
+  .cover-mid {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 10px;
+    gap: 24px;
+    margin-top: 60px;
   }
 
-  .section-title::before {
+  .cover-orb {
+    width: 220px;
+    height: 220px;
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .cover-orb::before {
     content: '';
-    width: 4px; height: 22px;
-    background: var(--sage);
-    border-radius: 2px;
-    display: inline-block;
+    position: absolute;
+    inset: -40px;
+    background: radial-gradient(circle, var(--aura-green) 0%, var(--aura-green-soft) 40%, transparent 70%);
+    filter: blur(28px);
+  }
+  .cover-orb::after {
+    content: '';
+    position: absolute;
+    inset: 30px;
+    background: radial-gradient(circle, var(--aura-green-strong) 0%, var(--aura-green-soft) 50%, transparent 75%);
+    border-radius: 50%;
   }
 
-  .section-sub {
-    font-size: 13px;
-    color: var(--ink-light);
-    margin-bottom: 24px;
-    padding-left: 14px;
+  .cover h1 {
+    font-family: var(--font-serif);
+    font-size: 84px;
+    font-weight: 400;
+    line-height: 0.95;
+    letter-spacing: -0.005em;
+    color: var(--text-primary);
   }
 
-  /* ---- Feature Cards ---- */
-  .features {
+  .cover .subtitle {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-weight: 300;
+    font-size: 20px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+
+  .cover .tagline {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 300;
+    color: var(--text-secondary);
+    line-height: 1.9;
+    max-width: 460px;
+    margin-top: 24px;
+  }
+
+  .cover-bottom {
+    margin-top: 60px;
+  }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 24px;
+    text-align: left;
+    padding-top: 28px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+  }
+  .meta-item .meta-label {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .meta-item .meta-value {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  /* ─────────────────────────── Feature aura cards ─────────────────────────── */
+  .feature-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 32px;
+    gap: 16px;
+    margin-bottom: 48px;
   }
 
   .feature-card {
-    background: var(--cream);
-    border-radius: 12px;
-    padding: 18px 16px;
+    position: relative;
+    background: rgba(0,0,0,0.025);
+    border-radius: 20px;
+    padding: 28px 24px 24px;
+    overflow: hidden;
+    min-height: 168px;
   }
 
-  .feature-card .icon {
-    width: 32px; height: 32px;
-    background: var(--sage);
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    color: white;
-    font-size: 16px;
+  .feature-card .orb {
+    position: absolute;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    filter: blur(22px);
+    top: 18px;
+    right: 18px;
+    pointer-events: none;
+    opacity: 0.95;
+  }
+  .feature-card.green .orb  { background: radial-gradient(circle, var(--aura-green-strong) 0%, transparent 60%); }
+  .feature-card.purple .orb { background: radial-gradient(circle, var(--aura-purple) 0%, transparent 60%); }
+  .feature-card.rose .orb   { background: radial-gradient(circle, var(--aura-rose) 0%, transparent 60%); }
+  .feature-card.amber .orb  { background: radial-gradient(circle, var(--aura-amber) 0%, transparent 60%); }
+
+  .feature-card .label {
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 28px;
   }
 
-  .feature-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
-  .feature-card p { font-size: 11.5px; color: var(--ink-light); line-height: 1.5; }
+  .feature-card h3 {
+    position: relative;
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
 
-  /* ---- Tech Stack ---- */
+  .feature-card p {
+    position: relative;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  /* ─────────────────────────── Tech stack ─────────────────────────── */
   .tech-row {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 28px;
+    margin-bottom: 36px;
   }
-
   .tech-tag {
-    font-size: 11.5px;
-    padding: 5px 14px;
-    border-radius: 20px;
-    background: var(--cream);
-    font-weight: 500;
-    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    padding: 7px 14px;
+    border-radius: 999px;
+    background: rgba(0,0,0,0.03);
+    color: var(--text-secondary);
+  }
+  .tech-tag.primary {
+    background: rgba(111, 169, 137, 0.16);
+    color: var(--text-primary);
   }
 
-  .tech-tag.primary { background: var(--sage); color: white; }
+  /* ─────────────────────────── Architecture list ─────────────────────────── */
+  .arch-list {
+    display: flex;
+    flex-direction: column;
+  }
+  .arch-row {
+    display: grid;
+    grid-template-columns: 36px 140px 1fr;
+    gap: 16px;
+    align-items: baseline;
+    padding: 16px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+  .arch-row:last-child { border-bottom: none; }
+  .arch-row .num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+  .arch-row .name {
+    font-family: var(--font-serif);
+    font-size: 17px;
+    color: var(--text-primary);
+  }
+  .arch-row .desc {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
 
-  /* ---- Screenshot Showcase ---- */
+  /* ─────────────────────────── Phone showcase ─────────────────────────── */
   .showcase-row {
     display: flex;
-    gap: 16px;
+    gap: 18px;
     justify-content: center;
-    margin-bottom: 20px;
-  }
-
-  .phone-frame {
-    width: 155px;
-    background: #1a1a1a;
-    border-radius: 24px;
-    padding: 8px;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
-    flex-shrink: 0;
-  }
-
-  .phone-frame img {
-    width: 100%;
-    border-radius: 18px;
-    display: block;
-  }
-
-  .phone-label {
-    text-align: center;
-    font-size: 11px;
-    color: var(--ink-light);
-    margin-top: 8px;
-    font-weight: 500;
+    margin-bottom: 18px;
   }
 
   .phone-wrap {
@@ -237,235 +387,423 @@
     align-items: center;
   }
 
-  /* ---- Architecture ---- */
-  .arch-box {
-    background: var(--cream);
-    border-radius: 14px;
-    padding: 24px;
-    margin-bottom: 28px;
+  .phone-frame {
+    width: 156px;
+    border-radius: 22px;
+    padding: 6px;
+    background: rgba(0,0,0,0.04);
+    box-shadow: 0 12px 36px rgba(0,0,0,0.06);
+  }
+  .phone-frame img {
+    width: 100%;
+    border-radius: 17px;
+    display: block;
   }
 
-  .arch-layer {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(0,0,0,0.06);
+  .phone-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-top: 12px;
   }
 
-  .arch-layer:last-child { border-bottom: none; }
-
-  .arch-layer .dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--sage);
-    flex-shrink: 0;
+  /* ─────────────────────────── Version pill ─────────────────────────── */
+  .version-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: var(--paper);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    color: var(--text-primary);
+    margin-right: 10px;
+    vertical-align: 2px;
+  }
+  .version-tag.v2 {
+    background: rgba(111, 169, 137, 0.16);
   }
 
-  .arch-layer .name { font-size: 13px; font-weight: 600; width: 120px; }
-  .arch-layer .desc { font-size: 12px; color: var(--ink-light); }
+  /* ─────────────────────────── Design note ─────────────────────────── */
+  .design-note {
+    margin-top: 28px;
+    padding: 22px 24px;
+    background: rgba(0,0,0,0.025);
+    border-radius: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .design-note::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, var(--aura-green) 0%, transparent 60%);
+    filter: blur(24px);
+  }
+  .design-note-label {
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+  }
+  .design-note p {
+    position: relative;
+    font-family: var(--font-serif);
+    font-size: 14px;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.8;
+  }
 
-  /* ---- Highlights ---- */
-  .highlights {
+  /* ─────────────────────────── Highlights ─────────────────────────── */
+  .highlight-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 14px;
-    margin-bottom: 28px;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 48px;
   }
 
-  .highlight-card {
-    text-align: center;
-    background: var(--cream);
-    border-radius: 12px;
-    padding: 20px 12px;
-  }
-
-  .highlight-card .num {
-    font-family: 'Space Grotesk', sans-serif;
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--sage);
-  }
-
-  .highlight-card .unit { font-size: 11px; color: var(--ink-light); margin-top: 2px; }
-
-  /* ---- Footer ---- */
+  /* ─────────────────────────── Page footer ─────────────────────────── */
   .page-footer {
-    margin-top: auto;
-    padding-top: 20px;
-    border-top: 1px solid var(--sage-light);
+    margin-top: 56px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(0,0,0,0.08);
     display: flex;
     justify-content: space-between;
-    font-size: 11px;
-    color: var(--ink-light);
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  /* ─────────────────────────── Aura state palette swatches ─────────────────────────── */
+  .palette-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .palette-card {
+    position: relative;
+    padding: 28px 22px 22px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.025);
+    overflow: hidden;
+    min-height: 180px;
+  }
+  .palette-card .swatch {
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    margin: 0 auto 18px;
+    filter: blur(8px);
+  }
+  .palette-card.focus .swatch    { background: radial-gradient(circle, var(--aura-green-strong) 0%, var(--aura-green-soft) 60%, transparent 80%); }
+  .palette-card.paused .swatch   { background: radial-gradient(circle, var(--aura-purple) 0%, var(--aura-purple-soft) 60%, transparent 80%); }
+  .palette-card.complete .swatch { background: radial-gradient(circle, var(--aura-amber) 0%, var(--aura-amber-soft) 60%, transparent 80%); }
+  .palette-card .pname {
+    text-align: center;
+    font-family: var(--font-serif);
+    font-size: 18px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .palette-card .pmono {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--text-muted);
   }
 </style>
 </head>
 <body>
 
-<!-- ==================== PAGE 1: Cover ==================== -->
+<!-- ==================== PAGE 1 · Cover ==================== -->
 <div class="page cover">
-  <div class="logo">
-    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+  <div class="cover-aura-bg"></div>
+
+  <div class="cover-top">
+    <div class="mark">FOCUS.CIRCLE · 作品展示</div>
   </div>
-  <h1>Focus Circle</h1>
-  <div class="subtitle">专注圈 — 学习社群专注计时应用</div>
-  <div class="tagline">
-    一款为学习社群设计的轻量级专注工具。通过正计时、实时排行榜和 AI 任务拆解，帮助用户建立可持续的学习习惯，在社群中互相激励、共同进步。
+
+  <div class="cover-mid">
+    <div class="cover-orb"></div>
+    <h1>Focus Circle</h1>
+    <div class="subtitle">专注圈 — 一款为学习社群设计的灵气流动专注工具</div>
+    <p class="tagline">
+      正向计时、跨设备实时同步、AI 任务拆解。<br>
+      用一颗呼吸的光球记录真实的投入，让专注本身成为奖励。
+    </p>
   </div>
-  <div class="meta-grid">
-    <div class="meta-item">
-      <div class="label">角色</div>
-      <div class="value">独立开发 (全栈)</div>
-    </div>
-    <div class="meta-item">
-      <div class="label">平台</div>
-      <div class="value">移动端 Web / PWA</div>
-    </div>
-    <div class="meta-item">
-      <div class="label">技术栈</div>
-      <div class="value">Next.js · React · Supabase · Cloudflare</div>
-    </div>
-    <div class="meta-item">
-      <div class="label">线上地址</div>
-      <div class="value">focus-circle-six.vercel.app</div>
+
+  <div class="cover-bottom">
+    <div class="meta-grid">
+      <div class="meta-item">
+        <div class="meta-label">Role</div>
+        <div class="meta-value">独立开发 · 全栈</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Platform</div>
+        <div class="meta-value">移动 Web / PWA</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Stack</div>
+        <div class="meta-value">Next · Supabase · CF</div>
+      </div>
+      <div class="meta-item">
+        <div class="meta-label">Live</div>
+        <div class="meta-value">focus-circle-six.vercel.app</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ==================== PAGE 2: Features ==================== -->
+<!-- ==================== PAGE 2 · Features + Tech ==================== -->
 <div class="page">
-  <div class="section-title">核心功能</div>
-  <div class="section-sub">围绕「记录真实投入」理念设计，不设倒计时、不设打卡天数</div>
+  <div class="section-head">
+    <div class="label">CORE FEATURES · 核心功能</div>
+    <div class="title">围绕「真实投入」</div>
+    <div class="sub">不设倒计时、不设打卡天数</div>
+  </div>
 
-  <div class="features">
-    <div class="feature-card">
-      <div class="icon">&#9201;</div>
+  <div class="feature-grid">
+    <div class="feature-card green">
+      <div class="orb"></div>
+      <div class="label">FOCUS · 专注</div>
       <h3>正向计时</h3>
-      <p>无压力的正计时模式，支持暂停/继续，跨设备实时同步。关联任务后计时自动累加到对应条目。</p>
+      <p>无压力的正计时模式，支持暂停 / 继续 / 跨设备实时同步。任务关联后时长自动累加到对应条目，完成页以暖金光晕收尾。</p>
     </div>
-    <div class="feature-card">
-      <div class="icon">&#9733;</div>
+    <div class="feature-card rose">
+      <div class="orb"></div>
+      <div class="label">RANK · 排行</div>
       <h3>实时排行榜</h3>
-      <p>按当日专注时长排名，支持「同目标」筛选。活跃用户显示脉冲指示与实时计时。</p>
+      <p>按当日专注时长排名，"此刻 X 人专注中"实时显示。支持「同目标」筛选，他人的进度即此刻的鼓励。</p>
     </div>
-    <div class="feature-card">
-      <div class="icon" style="background:var(--lavender);">&#9998;</div>
+    <div class="feature-card purple">
+      <div class="orb"></div>
+      <div class="label">SHARE · 共学</div>
       <h3>学习广场</h3>
-      <p>社区资源分享板块，用户可发布学习笔记和资料链接，每日限发一条保持质量。</p>
+      <p>社区资源板块，可发布学习笔记和资料链接。每日限发一条以保持质量，支持鼓励互动。</p>
     </div>
-    <div class="feature-card">
-      <div class="icon" style="background:var(--rose);">&#10024;</div>
+    <div class="feature-card amber">
+      <div class="orb"></div>
+      <div class="label">AI · 拆解</div>
       <h3>AI 任务拆解</h3>
-      <p>接入智谱 GLM 大模型，根据用户学习目标智能生成每日小任务和周计划概览。</p>
+      <p>接入智谱 GLM 大模型，根据用户的学习目标智能生成每日小任务，可一键加入今日清单。</p>
     </div>
   </div>
 
-  <div class="section-title">技术架构</div>
-  <div class="section-sub">Serverless 全栈架构，零服务器运维</div>
+  <div class="section-head">
+    <div class="label">ARCHITECTURE · 技术架构</div>
+    <div class="title">Serverless 全栈</div>
+    <div class="sub">零服务器运维，全球边缘部署</div>
+  </div>
 
   <div class="tech-row">
     <span class="tech-tag primary">Next.js 16</span>
     <span class="tech-tag primary">React 19</span>
     <span class="tech-tag primary">TypeScript</span>
-    <span class="tech-tag">Supabase (PostgreSQL)</span>
+    <span class="tech-tag">Supabase Postgres</span>
     <span class="tech-tag">Supabase Auth</span>
     <span class="tech-tag">Supabase Realtime</span>
-    <span class="tech-tag">Tailwind CSS 4</span>
+    <span class="tech-tag">Tailwind 4</span>
     <span class="tech-tag">Cloudflare Workers</span>
     <span class="tech-tag">Vercel</span>
-    <span class="tech-tag">智谱 GLM API</span>
+    <span class="tech-tag">智谱 GLM</span>
     <span class="tech-tag">PWA</span>
   </div>
 
-  <div class="arch-box">
-    <div class="arch-layer">
-      <div class="dot"></div>
+  <div class="arch-list">
+    <div class="arch-row">
+      <div class="num">01</div>
       <div class="name">前端渲染</div>
       <div class="desc">Next.js App Router + React Server Components，按路由自动代码分割</div>
     </div>
-    <div class="arch-layer">
-      <div class="dot" style="background:var(--lavender);"></div>
+    <div class="arch-row">
+      <div class="num">02</div>
       <div class="name">状态管理</div>
-      <div class="desc">React Context (TimerContext / AppDataContext)，localStorage 离线缓存</div>
+      <div class="desc">React Context（TimerContext / AppDataContext）+ localStorage 离线缓存</div>
     </div>
-    <div class="arch-layer">
-      <div class="dot" style="background:var(--rose);"></div>
+    <div class="arch-row">
+      <div class="num">03</div>
       <div class="name">实时同步</div>
-      <div class="desc">Supabase Realtime WebSocket 订阅 active_timers 表，跨设备秒级同步</div>
+      <div class="desc">Supabase Realtime WebSocket 订阅 active_timers，跨设备秒级同步</div>
     </div>
-    <div class="arch-layer">
-      <div class="dot" style="background:#D4A574;"></div>
+    <div class="arch-row">
+      <div class="num">04</div>
       <div class="name">数据持久化</div>
       <div class="desc">Supabase PostgreSQL + RLS 行级安全策略，服务端零信任</div>
     </div>
-    <div class="arch-layer">
-      <div class="dot" style="background:#888;"></div>
+    <div class="arch-row">
+      <div class="num">05</div>
       <div class="name">边缘部署</div>
-      <div class="desc">Cloudflare Workers (via OpenNext) + Vercel 双平台部署，全球低延迟</div>
+      <div class="desc">Cloudflare Workers（OpenNext）+ Vercel 双平台部署，全球低延迟</div>
     </div>
   </div>
 </div>
 
-<!-- ==================== PAGE 3: Screenshots ==================== -->
+<!-- ==================== PAGE 3 · Screenshots V1 ==================== -->
 <div class="page">
-  <div class="section-title">产品截图</div>
-  <div class="section-sub">植物系视觉风格，温暖、沉静、无干扰</div>
+  <div class="section-head">
+    <div class="label">PRODUCT SHOTS · 产品截图</div>
+    <div class="title"><span class="version-tag">V1.0</span>植物系视觉</div>
+    <div class="sub">卡片化布局 · 温暖纸感 · 装饰性图形</div>
+  </div>
 
   <div class="showcase-row">
     <div class="phone-wrap">
       <div class="phone-frame"><img src="screenshots/计时器页面.jpg" alt="计时器"></div>
-      <div class="phone-label">专注计时</div>
+      <div class="phone-label">Timer</div>
     </div>
     <div class="phone-wrap">
       <div class="phone-frame"><img src="screenshots/排行榜页面.jpg" alt="排行榜"></div>
-      <div class="phone-label">实时排行榜</div>
+      <div class="phone-label">Leaderboard</div>
     </div>
     <div class="phone-wrap">
       <div class="phone-frame"><img src="screenshots/AI拆解任务页面.jpg" alt="AI任务"></div>
-      <div class="phone-label">AI 任务拆解</div>
+      <div class="phone-label">AI Tasks</div>
     </div>
   </div>
 
-  <div class="showcase-row" style="margin-top:16px;">
+  <div class="showcase-row" style="margin-top: 24px;">
     <div class="phone-wrap">
       <div class="phone-frame"><img src="screenshots/学习广场页面.jpg" alt="学习广场"></div>
-      <div class="phone-label">学习广场</div>
+      <div class="phone-label">Square</div>
     </div>
     <div class="phone-wrap">
       <div class="phone-frame"><img src="screenshots/个人档案页面.jpg" alt="个人档案"></div>
-      <div class="phone-label">个人档案</div>
+      <div class="phone-label">Profile</div>
     </div>
+  </div>
+
+  <div class="design-note">
+    <div class="design-note-label">DESIGN BASE · 设计基调</div>
+    <p>柔和草本绿 + 米色纸张为主色，分块卡片承载内容，强调"手账感"与陪伴氛围。
+    适合学习社群初期 — 信息密度低，节日感强。</p>
   </div>
 </div>
 
-<!-- ==================== PAGE 4: Technical Highlights ==================== -->
+<!-- ==================== PAGE 4 · Screenshots V2 ==================== -->
 <div class="page">
-  <div class="section-title">技术亮点</div>
-  <div class="section-sub">工程设计中的关键决策</div>
+  <div class="section-head">
+    <div class="label">PRODUCT SHOTS · 产品截图</div>
+    <div class="title"><span class="version-tag v2">V2.0</span>灵气流动</div>
+    <div class="sub">衬线大字 · 中央光球 · 留白排版 · 去卡片化</div>
+  </div>
 
-  <div class="features">
-    <div class="feature-card">
+  <div class="showcase-row">
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/新-计时页面.jpg" alt="计时器 V2"></div>
+      <div class="phone-label">Timer · Aura</div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/新-排行榜页面.jpg" alt="排行榜 V2"></div>
+      <div class="phone-label">Leaderboard</div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/新-AI任务页面.jpg" alt="AI任务 V2"></div>
+      <div class="phone-label">AI Tasks</div>
+    </div>
+  </div>
+
+  <div class="showcase-row" style="margin-top: 24px;">
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/新-广场页面.jpg" alt="广场 V2"></div>
+      <div class="phone-label">Square</div>
+    </div>
+    <div class="phone-wrap">
+      <div class="phone-frame"><img src="screenshots/新-我的页面.jpg" alt="我的 V2"></div>
+      <div class="phone-label">Profile</div>
+    </div>
+  </div>
+
+  <div class="design-note">
+    <div class="design-note-label">DIRECTION · 迭代方向</div>
+    <p>把"计时器"从一个功能升格为情绪锚点。中央光球随状态切换主色 —
+    专注绿 / 暂停紫 / 完成暖金 — 并以 7 秒呼吸节奏轻微缩放；衬线大字
+    与等宽数字配合，留白拉到最大。去掉所有装饰图形，让用户只看见
+    "时间在流动"。</p>
+  </div>
+</div>
+
+<!-- ==================== PAGE 5 · Aura System ==================== -->
+<div class="page">
+  <div class="section-head">
+    <div class="label">DESIGN SYSTEM · 灵气状态色</div>
+    <div class="title">三态光晕</div>
+    <div class="sub">同一颗光球 · 三种心境</div>
+  </div>
+
+  <div class="palette-row">
+    <div class="palette-card focus">
+      <div class="swatch"></div>
+      <div class="pname">专注 Focus</div>
+      <div class="pmono">RGBA 111 · 169 · 137</div>
+    </div>
+    <div class="palette-card paused">
+      <div class="swatch"></div>
+      <div class="pname">暂停 Paused</div>
+      <div class="pmono">RGBA 176 · 156 · 217</div>
+    </div>
+    <div class="palette-card complete">
+      <div class="swatch"></div>
+      <div class="pname">完成 Complete</div>
+      <div class="pmono">RGBA 220 · 178 · 138</div>
+    </div>
+  </div>
+
+  <div class="section-head">
+    <div class="label">ENGINEERING NOTES · 工程亮点</div>
+    <div class="title">关键决策</div>
+    <div class="sub">设计语言之外的工程取舍</div>
+  </div>
+
+  <div class="highlight-grid">
+    <div class="feature-card green">
+      <div class="orb"></div>
+      <div class="label">SYNC · 同步</div>
       <h3>跨设备计时同步</h3>
-      <p>以 Supabase active_timers 为唯一真相来源，配合 Realtime 订阅实现多端状态一致，解决了浏览器标签页切换导致的计时漂移问题。</p>
+      <p>以 active_timers 表为唯一真相来源，配合 Realtime 订阅实现多端状态一致，
+      解决了浏览器标签页切换导致的计时漂移。</p>
     </div>
-    <div class="feature-card">
+    <div class="feature-card amber">
+      <div class="orb"></div>
+      <div class="label">RECOVERY · 容错</div>
       <h3>僵尸计时器恢复</h3>
-      <p>检测超过 12 小时的遗忘计时器，提供保存（上限 12h）、丢弃、继续三种恢复策略，避免异常数据污染排行榜。</p>
+      <p>检测超过 12 小时的遗忘计时器，提供保存（上限 12h）/ 丢弃 / 继续三种
+      恢复策略，避免异常数据污染排行榜。</p>
     </div>
-    <div class="feature-card">
+    <div class="feature-card rose">
+      <div class="orb"></div>
+      <div class="label">OFFLINE · 离线</div>
       <h3>离线优先</h3>
-      <p>网络异常时 session 自动存入 localStorage 队列，恢复连接后批量补传，PWA 支持离线访问。</p>
+      <p>网络异常时 session 自动存入 localStorage 队列，恢复连接后批量补传。
+      PWA 支持离线访问与桌面安装。</p>
     </div>
-    <div class="feature-card">
-      <h3>AI 任务智能拆解</h3>
-      <p>后端 API 路由接入智谱 GLM，根据用户设定的学习目标生成结构化每日任务，可一键加入任务清单。</p>
+    <div class="feature-card purple">
+      <div class="orb"></div>
+      <div class="label">AI · 智能</div>
+      <h3>AI 任务拆解</h3>
+      <p>后端 API 路由接入智谱 GLM，根据学习目标生成结构化每日任务，
+      一键加入今日清单。</p>
     </div>
   </div>
 
   <div class="page-footer">
-    <span>Focus Circle 专注圈 — 作品展示</span>
-    <span>github.com/ArdenGao10/focus-circle</span>
+    <span>FOCUS.CIRCLE · 作品展示</span>
+    <span>github · ArdenGao10/focus-circle</span>
   </div>
 </div>
 
