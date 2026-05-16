@@ -104,9 +104,20 @@ export function TimerProvider({ children }: { children: ReactNode }) {
   const [saving, setSaving] = useState(false)
   const [lastSession, setLastSession] = useState<SessionRecord | null>(null)
   const [zombie, setZombie] = useState<ZombieInfo | null>(null)
+  // Timestamp of the last end()/zombie action. Used to optimistically drop
+  // the local timer instead of waiting for the Realtime DELETE round-trip.
+  const [endMarker, setEndMarker] = useState(0)
 
-  // The server record for current user — this is the single source of truth
-  const myActiveTimer = activeTimers.find(t => t.user_id === userId) ?? null
+  // The server record for current user — this is the single source of truth.
+  // After an end, the stale row may linger locally for the brief window
+  // before the Realtime DELETE arrives; suppress it so pause/resume can't
+  // resurrect a just-ended session. A genuinely new timer started afterwards
+  // has updated_at > endMarker, so it is NOT suppressed.
+  const rawActiveTimer = activeTimers.find(t => t.user_id === userId) ?? null
+  const myActiveTimer = (rawActiveTimer && endMarker > 0 &&
+    new Date(rawActiveTimer.updated_at).getTime() <= endMarker)
+    ? null
+    : rawActiveTimer
   const prevTimerRef = useRef<ActiveTimer | null>(null)
 
   // Tick counter to force re-render every second when running
@@ -181,6 +192,10 @@ export function TimerProvider({ children }: { children: ReactNode }) {
     if (!userId) return
     const finalElapsed = myActiveTimer ? computeElapsed(myActiveTimer) : 0
 
+    // Optimistically clear the local timer — don't wait for the Realtime
+    // DELETE, or pause/resume could resurrect this session in the meantime.
+    setEndMarker(Date.now())
+
     if (finalElapsed < 1) {
       syncActiveTimer(userId, 'delete')
       return
@@ -248,6 +263,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   const zombieSave = useCallback(async () => {
     if (!userId || !myActiveTimer) { setZombie(null); return }
+    setEndMarker(Date.now())
 
     const dateStr = new Date(myActiveTimer.started_at).toISOString().split('T')[0]
     const normalizedTaskName = myActiveTimer.task_text?.trim() || PERSONAL_FOCUS
@@ -276,6 +292,7 @@ export function TimerProvider({ children }: { children: ReactNode }) {
 
   const zombieDiscard = useCallback(() => {
     if (userId) syncActiveTimer(userId, 'delete')
+    setEndMarker(Date.now())
     setZombie(null)
   }, [userId])
 
