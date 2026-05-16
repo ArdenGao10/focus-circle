@@ -3,31 +3,18 @@
 import { useTimer, useLiveElapsed } from '@/components/TimerContext'
 
 /**
- * Floating-ball orb (PRD 二期). Same visual language as the homepage
- * AuraHalo orb, scaled to 1/4 (core 320 → 80px, time 64 → 16px,
- * blur 60 → 15px). Rendered into a native transparent always-on-top
- * window by the desktop shell; the page background is transparent so
- * only the orb + its diffuse glow are visible.
+ * Floating-ball orb (PRD 二期 · 浅色灵气球).
+ *
+ * Unlike the homepage orb (a soft translucent glow that only reads on the
+ * near-white app background), this ball must stay legible on ANY desktop
+ * wallpaper. So it has a solid frosted-white disc as its body, with the
+ * aura color expressed as a rotating conic-gradient ring around the rim
+ * ("灵气流动"), a radar pulse, an outer glow, and a drop shadow.
+ *
+ * Rendered into a native transparent always-on-top window by the Electron
+ * shell. Keyframes (ball-spin / ball-pulse / ball-breathe) live in
+ * ball/layout.tsx.
  */
-
-type TimerVisualState = 'idle' | 'running' | 'paused'
-
-// Identical gradient tokens to the homepage orb — keeps the ball
-// visually consistent with the main timer.
-const ORB_GRADIENTS: Record<TimerVisualState, { outer: string; core: string }> = {
-  idle: {
-    outer: 'radial-gradient(circle, var(--aura-focus-soft) 0%, var(--aura-focus-soft) 35%, transparent 70%)',
-    core: 'radial-gradient(circle, var(--aura-focus-primary) 0%, var(--aura-focus-soft) 45%, transparent 70%)',
-  },
-  running: {
-    outer: 'radial-gradient(circle, var(--aura-focus-soft) 0%, var(--aura-focus-soft) 35%, transparent 70%)',
-    core: 'radial-gradient(circle, var(--aura-focus-primary) 0%, var(--aura-focus-soft) 45%, transparent 70%)',
-  },
-  paused: {
-    outer: 'radial-gradient(circle, var(--aura-paused-soft) 0%, var(--aura-paused-soft) 35%, transparent 70%)',
-    core: 'radial-gradient(circle, var(--aura-paused-primary) 0%, var(--aura-paused-soft) 45%, transparent 70%)',
-  },
-}
 
 function pad2(n: number) {
   return n.toString().padStart(2, '0')
@@ -41,14 +28,19 @@ function formatTime(seconds: number): string {
   return `${pad2(m)}:${pad2(s)}`
 }
 
+const RING_RUNNING =
+  'conic-gradient(from 0deg, rgba(92,138,112,0.95), rgba(168,213,186,0.45), rgba(176,156,217,0.9), rgba(168,213,186,0.45), rgba(92,138,112,0.95))'
+const RING_PAUSED =
+  'conic-gradient(from 0deg, rgba(141,131,166,0.85), rgba(221,215,234,0.4), rgba(176,156,217,0.8), rgba(221,215,234,0.4), rgba(141,131,166,0.85))'
+
 export default function BallPage() {
   const { state } = useTimer()
   const elapsed = useLiveElapsed()
+  const paused = state === 'paused'
 
-  const gradient = ORB_GRADIENTS[state]
-  const coreClassName = state === 'paused'
-    ? 'aura-orb-breathe aura-breathe-paused'
-    : 'aura-orb-breathe'
+  const ring = paused ? RING_PAUSED : RING_RUNNING
+  const glow = paused ? 'rgba(176,156,217,0.55)' : 'rgba(120,180,150,0.6)'
+  const pulseColor = paused ? 'rgba(176,156,217,0.6)' : 'rgba(111,169,137,0.7)'
 
   return (
     <main
@@ -61,7 +53,7 @@ export default function BallPage() {
         background: 'transparent',
       }}
     >
-      {/* 160×160 stage — holds the diffuse glow; orb core sits centered. */}
+      {/* 160×160 stage. */}
       <div
         style={{
           position: 'relative',
@@ -72,56 +64,81 @@ export default function BallPage() {
           justifyContent: 'center',
         }}
       >
-        {/* Outer diffuse glow — fills the stage, soft blurred edge. */}
+        {/* Outer diffuse glow — gentle breathe while running. */}
         <div
           aria-hidden="true"
           style={{
             position: 'absolute',
-            inset: 0,
-            background: gradient.outer,
-            filter: 'blur(15px)',
+            width: 150,
+            height: 150,
             borderRadius: '50%',
+            background: `radial-gradient(circle, ${glow} 0%, transparent 68%)`,
+            filter: 'blur(16px)',
+            animation: paused ? 'none' : 'ball-breathe 6s ease-in-out infinite',
             pointerEvents: 'none',
             transition: 'background 1.2s ease',
           }}
         />
 
-        {/* Core — fixed 80×80 circle. Wrapper centers; inner element does
-           the breathe scale so pausing never displaces the orb. */}
+        {/* Radar pulse — two staggered rings, running only. */}
+        {!paused &&
+          [0, 1.5].map((delay) => (
+            <div
+              key={delay}
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                width: 112,
+                height: 112,
+                borderRadius: '50%',
+                border: `2.5px solid ${pulseColor}`,
+                animation: `ball-pulse 3s ease-out ${delay}s infinite`,
+                pointerEvents: 'none',
+              }}
+            />
+          ))}
+
+        {/* Rotating conic-gradient ring — the white disc covers the centre,
+           leaving a ~7px rim where the rotating colors "flow". */}
         <div
           aria-hidden="true"
           style={{
             position: 'absolute',
-            width: 80,
-            height: 80,
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
+            width: 112,
+            height: 112,
+            borderRadius: '50%',
+            background: ring,
+            filter: 'blur(2px)',
+            animation: `ball-spin ${paused ? '48s' : '9s'} linear infinite`,
+            willChange: 'transform',
             pointerEvents: 'none',
+            transition: 'background 1.2s ease',
           }}
-        >
-          <div
-            className={coreClassName}
-            style={{
-              width: '100%',
-              height: '100%',
-              background: gradient.core,
-              borderRadius: '50%',
-              transition: 'background 1.2s ease',
-            }}
-          />
-        </div>
+        />
 
-        {/* Time digits — centered on top. */}
+        {/* Frosted white disc — the solid body that guarantees contrast. */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: 'absolute',
+            width: 98,
+            height: 98,
+            borderRadius: '50%',
+            background: 'radial-gradient(circle at 38% 32%, #FFFFFF, #F1F1EF)',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.22), 0 2px 6px rgba(0,0,0,0.14)',
+          }}
+        />
+
+        {/* Time digits. */}
         <div
           style={{
             position: 'relative',
             zIndex: 2,
             fontFamily: 'var(--aura-font-serif)',
-            fontSize: 16,
-            fontWeight: 300,
+            fontSize: 17,
+            fontWeight: 400,
             lineHeight: 1,
-            color: 'var(--aura-text-primary)',
+            color: '#1A1A1A',
             letterSpacing: '0.02em',
             fontVariantNumeric: 'tabular-nums lining-nums',
           }}

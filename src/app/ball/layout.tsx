@@ -20,7 +20,13 @@ export default function BallLayout({ children }: { children: React.ReactNode }) 
   return (
     <AppDataProvider>
       <TimerProvider>
-        <style>{'html,body{background:transparent!important;margin:0;height:100%;overflow:hidden}body{-webkit-app-region:drag}'}</style>
+        <style>{[
+          'html,body{background:transparent!important;margin:0;height:100%;overflow:hidden}',
+          'body{-webkit-app-region:drag}',
+          '@keyframes ball-spin{to{transform:rotate(360deg)}}',
+          '@keyframes ball-pulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(1.42);opacity:0}}',
+          '@keyframes ball-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}',
+        ].join('')}</style>
         {children}
       </TimerProvider>
     </AppDataProvider>
