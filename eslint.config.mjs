@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Electron main-process files — plain Node CJS, not part of the Next app.
+    "electron/**",
   ]),
 ]);
 

@@ -3,6 +3,7 @@ import { TimerProvider } from '@/components/TimerContext'
 import { AppDataProvider } from '@/components/AppDataContext'
 import SessionSummary from '@/components/SessionSummary'
 import TimerRecovery from '@/components/TimerRecovery'
+import ElectronBallBridge from '@/components/ElectronBallBridge'
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,6 +14,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           <BottomNav />
           <SessionSummary />
           <TimerRecovery />
+          <ElectronBallBridge />
         </div>
       </TimerProvider>
     </AppDataProvider>

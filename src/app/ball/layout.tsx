@@ -1,0 +1,28 @@
+import { TimerProvider } from '@/components/TimerContext'
+import { AppDataProvider } from '@/components/AppDataContext'
+
+/**
+ * Layout for the floating-ball window (PRD 二期).
+ *
+ * Lives outside the (main) route group on purpose: the ball window must
+ * NOT carry BottomNav / SessionSummary / TimerRecovery. It still needs
+ * AppDataProvider + TimerProvider so the orb reads the same server-backed
+ * timer state (active_timers + Realtime) as the main window.
+ *
+ * The injected <style> does two things required by the desktop shell:
+ *   1. overrides the opaque body background from globals.css to
+ *      transparent, so the native frameless window shows only the orb;
+ *   2. marks the body as an Electron drag region (-webkit-app-region),
+ *      so the user can drag the whole ball to reposition it.
+ * Both are harmless in a plain browser.
+ */
+export default function BallLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AppDataProvider>
+      <TimerProvider>
+        <style>{'html,body{background:transparent!important;margin:0;height:100%;overflow:hidden}body{-webkit-app-region:drag}'}</style>
+        {children}
+      </TimerProvider>
+    </AppDataProvider>
+  )
+}
