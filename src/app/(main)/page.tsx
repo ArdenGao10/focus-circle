@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useTimer, useLiveElapsed } from '@/components/TimerContext'
 import { useAppData } from '@/components/AppDataContext'
 import DailyTasks from '@/components/DailyTasks'
+import PipTimerButton from '@/components/PipTimer'
 
 const PERSONAL_FOCUS = '个人专注'
 
@@ -354,6 +355,8 @@ export default function TimerPage() {
               {saving ? '保存中…' : '结束本次专注'}
             </button>
           )}
+
+          <PipTimerButton />
         </div>
 
         {/* 7. 今日记录 — section, padding-based rows with thin dividers. */}
